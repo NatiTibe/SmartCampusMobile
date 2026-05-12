@@ -1,116 +1,181 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Platform } from 'react-native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { 
+  StyleSheet, View, Text, TextInput, TouchableOpacity, 
+  Image, KeyboardAvoidingView, Platform, Dimensions 
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
-// Define the "Shape" of our navigation for TypeScript
-type RootStackParamList = {
-  Login: undefined;
-  Home: undefined;
-};
+const { width } = Dimensions.get('window');
 
-type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
+const LoginScreen = ({ navigation }: any) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-interface Props {
-  navigation: LoginScreenNavigationProp;
-}
-
-const LoginScreen: React.FC<Props> = ({ navigation }) => {
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-
-  const handleLogin = async () => {
-    try {
-      // Connect to the /api/auth/login route in your server.ts
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (response.ok) {
-        navigation.navigate('Home');
-      } else {
-        alert('Invalid Login');
-      }
-    } catch (error) {
-      console.error('Backend Connection Error:', error);
-      // Fallback for testing
-      navigation.navigate('Home');
+  const handleLogin = () => {
+    const lowerEmail = email.toLowerCase();
+    if (lowerEmail === 'admin@aau.edu.et') {
+      navigation.navigate('AdminApproval');
+    } else if (lowerEmail.includes('organizer')) {
+      navigation.navigate('Home', { userRole: 'Organizer' });
+    } else {
+      navigation.navigate('Home', { userRole: 'Student' });
     }
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Smart Campus</Text>
-        <TextInput 
-          style={styles.input} 
-          placeholder="Email" 
-          value={email} 
-          onChangeText={setEmail} 
-        />
-        <TextInput 
-          style={styles.input} 
-          placeholder="Password" 
-          secureTextEntry 
-          value={password} 
-          onChangeText={setPassword} 
-        />
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Login</Text>
-        </TouchableOpacity>
-      </View>
+      <View style={styles.darkBackground} />
+      
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        style={styles.content}
+      >
+        {/* FIXED PATH: Going up two levels to reach assets */}
+        <View style={styles.illustrationContainer}>
+          <Image 
+            source={require('../../assets/login-illustration.png')} 
+            style={styles.illustration}
+            resizeMode="contain"
+          />
+        </View>
+
+        {/* The Card Design from image_d924bf.png */}
+        <View style={styles.card}>
+          <View style={styles.headerArea}>
+            <Text style={styles.glowText}>AAU</Text>
+            <Text style={styles.titleText}>SMART CAMPUS</Text>
+            <Text style={styles.subTitleText}>EVENT MANAGEMENT</Text>
+          </View>
+
+          <View style={styles.inputWrapper}>
+            <View style={styles.inputContainer}>
+              <View style={styles.iconBox}>
+                <Text style={styles.icon}>📧</Text>
+              </View>
+              <TextInput 
+                placeholder="Email" 
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                style={styles.input}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <View style={styles.iconBox}>
+                <Text style={styles.icon}>🔒</Text>
+              </View>
+              <TextInput 
+                placeholder="Password" 
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                style={styles.input}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
+            <LinearGradient 
+              colors={['#00d2ff', '#3a7bd5']} 
+              start={{x: 0, y: 0}} end={{x: 1, y: 0}}
+              style={styles.btnGradient}
+            >
+              <Text style={styles.loginBtnText}>Log in</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Don't have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+              <Text style={styles.signupText}>Create one.</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  darkBackground: { 
+    ...StyleSheet.absoluteFillObject, 
+    backgroundColor: '#000b18' 
+  },
+  content: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  
+  illustrationContainer: {
+    width: width,
+    height: 180,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    backgroundColor: '#f5f5f5',
+    marginBottom: -45, 
+    zIndex: 10,
   },
+  illustration: { width: '85%', height: '100%' },
+
   card: {
-    width: '100%',
-    padding: 24,
-    borderRadius: 16,
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  input: {
-    height: 48,
-    marginBottom: 16,
+    width: width * 0.9,
+    backgroundColor: '#0c1a2b', 
+    borderRadius: 45,
+    paddingTop: 65,
+    paddingBottom: 40,
+    paddingHorizontal: 25,
     borderWidth: 1,
-    borderColor: '#d1d1d6',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    backgroundColor: '#f8f8f8',
-  },
-  button: {
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: '#007aff',
-    justifyContent: 'center',
+    borderColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
-    marginTop: 8,
   },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
+
+  headerArea: { alignItems: 'center', marginBottom: 30 },
+  glowText: { 
+    color: '#00d2ff', 
+    fontSize: 60, 
+    fontWeight: 'bold', 
+    textShadowColor: '#00d2ff',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 15,
+  },
+  titleText: { 
+    color: '#fff', 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    marginTop: -5,
+    letterSpacing: 1
+  },
+  subTitleText: { 
+    color: 'rgba(255,255,255,0.5)', 
+    fontSize: 11, 
     fontWeight: '600',
+    marginTop: 5,
+    textTransform: 'uppercase'
   },
+
+  inputWrapper: { width: '100%', marginBottom: 25 },
+  inputContainer: { 
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#152639', 
+    borderRadius: 20, 
+    paddingHorizontal: 15,
+    height: 60,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)'
+  },
+  iconBox: { width: 30, alignItems: 'center' },
+  icon: { fontSize: 18 },
+  input: { flex: 1, color: '#fff', fontSize: 16, paddingLeft: 10 },
+
+  loginBtn: { width: '100%', height: 65, borderRadius: 25, overflow: 'hidden' },
+  btnGradient: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loginBtnText: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+
+  footer: { flexDirection: 'row', marginTop: 25 },
+  footerText: { color: 'rgba(255,255,255,0.6)', fontSize: 14 },
+  signupText: { color: '#00d2ff', fontWeight: 'bold', fontSize: 14 }
 });
 
 export default LoginScreen;
