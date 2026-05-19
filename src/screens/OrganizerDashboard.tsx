@@ -1,116 +1,186 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  ScrollView, 
-  TouchableOpacity, 
-  SafeAreaView, 
-  Dimensions 
+  StyleSheet, View, Text, FlatList, TouchableOpacity, 
+  SafeAreaView, Image, ScrollView, useWindowDimensions, Modal 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const { width } = Dimensions.get('window');
+// Mock data for events created by this specific organizer
+const MY_CREATED_EVENTS = [
+  { 
+    id: '1', title: 'AAU Tech Expo', status: 'Approved', 
+    registrations: 450, time: 'May 10, 10:00 AM', 
+    image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4' 
+  },
+  { 
+    id: '2', title: 'AI Ethics Talk', status: 'Pending', 
+    registrations: 0, time: 'June 2, 02:00 PM', 
+    image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e' 
+  },
+];
 
-const OrganizerDashboard = ({ navigation }: any) => {
-  // Dummy data for events created by this organizer
-  const myEvents = [
-    { id: '1', title: 'AAU Tech Expo 2026', rsvps: 145, interest: 230, status: 'Active' },
-    { id: '2', title: 'UI/UX Workshop', rsvps: 45, interest: 89, status: 'Draft' },
-  ];
+const OrganizerDashboard = ({ route, navigation }: any) => {
+  const { setUserRole, userRole = 'Organizer' } = route.params || {};
+  const nextRole = userRole === 'Organizer' ? 'Admin' : 'Student';
+  const nextRoute = userRole === 'Organizer' ? 'AdminDashboard' : 'Home';
+  const { width } = useWindowDimensions();
+  const statBoxBasis = width > 640 ? '48%' : '100%';
+  const imageSize = width > 420 ? 70 : 60;
+  const [selectedReport, setSelectedReport] = useState<any>(null);
 
   return (
-    <View style={styles.container}>
-      <LinearGradient colors={['#001529', '#052c52']} style={styles.background} />
-      
-      <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        
+        {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backIcon}>⬅️</Text>
+          <View>
+            <Text style={styles.headerTitle}>Organizer Panel</Text>
+            <Text style={styles.headerSub}>Manage your campus impact</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.logoutBtn} 
+            onPress={() => {
+              setUserRole?.(nextRole);
+              navigation.navigate(nextRoute, { userRole: nextRole, setUserRole });
+            }}
+          >
+            <Text style={styles.logoutText}>{`Switch to ${nextRole}`}</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Organizer Panel</Text>
-          <View style={{ width: 24 }} /> 
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Stats Overview */}
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>190</Text>
-              <Text style={styles.statLabel}>Total RSVPs</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>319</Text>
-              <Text style={styles.statLabel}>Total Interest</Text>
-            </View>
+        {/* Quick Stats Summary */}
+        <View style={styles.statsRow}>
+          <View style={[styles.statBox, { flexBasis: statBoxBasis }] }>
+            <Text style={styles.statNum}>450</Text>
+            <Text style={styles.statLabel}>Total Reach</Text>
           </View>
+          <View style={[styles.statBox, { flexBasis: statBoxBasis }] }>
+            <Text style={styles.statNum}>{MY_CREATED_EVENTS.length}</Text>
+            <Text style={styles.statLabel}>Events</Text>
+          </View>
+        </View>
 
-          <Text style={styles.sectionTitle}>Your Published Events</Text>
+        {/* Action Button */}
+        <TouchableOpacity 
+          style={styles.createBtn} 
+          onPress={() => navigation.navigate('CreateEvent')}
+        >
+          <LinearGradient colors={['#00d2ff', '#3a7bd5']} style={styles.btnGradient}>
+            <Text style={styles.createBtnText}>+ Create New Event</Text>
+          </LinearGradient>
+        </TouchableOpacity>
 
-          {myEvents.map((event) => (
-            <View key={event.id} style={styles.eventManageCard}>
+        <Text style={styles.sectionTitle}>Your Events</Text>
+
+        <FlatList
+          data={MY_CREATED_EVENTS}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.eventCard}>
+              <Image source={{ uri: item.image }} style={[styles.eventImg, { width: imageSize, height: imageSize }]} />
               <View style={styles.eventInfo}>
-                <Text style={styles.eventTitle}>{event.title}</Text>
-                <View style={styles.badgeRow}>
-                  <View style={[styles.statusBadge, {backgroundColor: event.status === 'Active' ? '#32CD32' : '#FFD700'}]}>
-                    <Text style={styles.statusText}>{event.status}</Text>
-                  </View>
+                <Text style={styles.eventTitle}>{item.title}</Text>
+                <Text style={styles.eventTime}>{item.time}</Text>
+                
+                {/* Registration Count */}
+                <View style={styles.regBadge}>
+                  <Text style={styles.regText}>👥 {item.registrations} Joined</Text>
+                </View>
+
+                {/* Status Indicator */}
+                <View style={[styles.statusTag, { backgroundColor: item.status === 'Approved' ? 'rgba(40, 167, 69, 0.2)' : 'rgba(255, 193, 7, 0.2)' }]}>
+                  <Text style={[styles.statusText, { color: item.status === 'Approved' ? '#28a745' : '#ffc107' }]}>
+                    ● {item.status}
+                  </Text>
                 </View>
               </View>
               
-              <View style={styles.metricsRow}>
-                <View style={styles.metric}>
-                  <Text style={styles.metricNum}>{event.rsvps}</Text>
-                  <Text style={styles.metricLabel}>RSVPs</Text>
-                </View>
-                <View style={styles.metric}>
-                  <Text style={styles.metricNum}>{event.interest}</Text>
-                  <Text style={styles.metricLabel}>Interested</Text>
-                </View>
-                <TouchableOpacity style={styles.editIconBtn}>
-                  <Text>✏️</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
+              <TouchableOpacity 
+                style={styles.reportBtn} 
+                onPress={() => setSelectedReport(item)}
+              >
+                <Text style={styles.reportBtnText}>📊 View Analytics</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.createNewBtn}
-            onPress={() => navigation.navigate('CreateEvent')}
-          >
-            <Text style={styles.createNewText}>+ Create New Event</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </SafeAreaView>
-    </View>
+              <TouchableOpacity 
+                style={styles.editBtn} 
+                onPress={() => navigation.navigate('CreateEvent', { event: item })}
+              >
+                <Text style={styles.editText}>Edit</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        />
+
+        <Modal visible={!!selectedReport} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>{selectedReport?.title} Analysis</Text>
+              <View style={styles.statBoxModal}>
+                <Text style={styles.statLabel}>Total Registrations</Text>
+                <Text style={styles.statValue}>{selectedReport?.registrations}</Text>
+              </View>
+
+              <Text style={styles.subTitle}>Engagement Status</Text>
+              <Text style={styles.descText}>
+                {selectedReport?.registrations > 100
+                  ? 'High engagement: Your event is trending!'
+                  : 'Moderate engagement: Consider sharing the event link on social media to boost sign-ups.'}
+              </Text>
+
+              <TouchableOpacity style={styles.closeBtn} onPress={() => setSelectedReport(null)}>
+                <Text style={styles.closeBtnText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  background: { ...StyleSheet.absoluteFillObject },
-  header: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, alignItems: 'center' },
-  backIcon: { color: '#fff', fontSize: 20 },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  scrollContent: { padding: 20 },
-  statsGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30 },
-  statCard: { width: '47%', backgroundColor: 'rgba(255,255,255,0.1)', padding: 20, borderRadius: 20, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  statValue: { color: '#00d2ff', fontSize: 24, fontWeight: 'bold' },
-  statLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 5 },
-  sectionTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
-  eventManageCard: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 20, padding: 20, marginBottom: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  eventInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  safeArea: { flex: 1, backgroundColor: '#000b18' },
+  container: { flex: 1, padding: '5%' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 25 },
+  headerTitle: { color: '#fff', fontSize: 26, fontWeight: 'bold' },
+  headerSub: { color: 'rgba(255,255,255,0.5)', fontSize: 13 },
+  logoutBtn: { padding: 8, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  logoutText: { color: '#fff', fontSize: 12 },
+
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25, flexWrap: 'wrap' },
+  statBox: { flexBasis: '48%', backgroundColor: '#0c1a2b', padding: 20, borderRadius: 20, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', marginBottom: 10 },
+  statNum: { color: '#00d2ff', fontSize: 24, fontWeight: 'bold' },
+  statLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 4 },
+
+  createBtn: { height: 55, borderRadius: 15, overflow: 'hidden', marginBottom: 30 },
+  btnGradient: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  createBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+
+  sectionTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 15 },
+  eventCard: { flexDirection: 'row', backgroundColor: '#0c1a2b', padding: 15, borderRadius: 20, marginBottom: 15, alignItems: 'center', width: '100%' },
+  eventImg: { width: 70, height: 70, borderRadius: 12 },
+  eventInfo: { flex: 1, marginLeft: 15 },
   eventTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  badgeRow: { marginTop: 8 },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 5, alignSelf: 'flex-start' },
-  statusText: { color: '#000', fontSize: 10, fontWeight: 'bold' },
-  metricsRow: { flexDirection: 'row', marginTop: 20, alignItems: 'center', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: 15 },
-  metric: { marginRight: 30 },
-  metricNum: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  metricLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 10 },
-  editIconBtn: { marginLeft: 'auto', width: 35, height: 35, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
-  createNewBtn: { marginTop: 20, height: 55, borderRadius: 15, borderStyle: 'dashed', borderWidth: 1, borderColor: '#00d2ff', justifyContent: 'center', alignItems: 'center' },
-  createNewText: { color: '#00d2ff', fontWeight: 'bold' }
+  eventTime: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 },
+  regBadge: { marginTop: 8 },
+  regText: { color: '#00d2ff', fontSize: 12, fontWeight: 'bold' },
+  statusTag: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 5, marginTop: 8 },
+  statusText: { fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' },
+  reportBtn: { padding: 10, marginRight: 10, backgroundColor: '#14233d', borderRadius: 12, borderWidth: 1, borderColor: '#00d2ff' },
+  reportBtnText: { color: '#00d2ff', fontWeight: 'bold' },
+  editBtn: { padding: 10 },
+  editText: { color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#0c1a2b', width: '90%', alignSelf: 'center', padding: 20, borderRadius: 20, minHeight: 300 },
+  modalTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 15 },
+  statBoxModal: { backgroundColor: '#081122', padding: 20, borderRadius: 18, marginBottom: 15 },
+  statValue: { color: '#00d2ff', fontSize: 32, fontWeight: 'bold', marginTop: 10 },
+  subTitle: { color: '#fff', fontSize: 14, fontWeight: 'bold', marginBottom: 8 },
+  descText: { color: 'rgba(255,255,255,0.7)', fontSize: 13, lineHeight: 18, marginBottom: 20 },
+  closeBtn: { backgroundColor: '#00d2ff', padding: 16, borderRadius: 15, alignItems: 'center' },
+  closeBtnText: { color: '#000b18', fontWeight: 'bold' }
 });
 
 export default OrganizerDashboard;

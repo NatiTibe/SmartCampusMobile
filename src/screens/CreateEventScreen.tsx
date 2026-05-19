@@ -1,158 +1,123 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  ScrollView, 
-  SafeAreaView, 
-  KeyboardAvoidingView, 
-  Platform,
-  Dimensions
+  StyleSheet, View, Text, TextInput, TouchableOpacity, 
+  SafeAreaView, ScrollView, Alert, Image, Platform 
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
-const { width } = Dimensions.get('window');
+const CreateEventScreen = ({ navigation, route }: any) => {
+  // Check if we are editing an existing event
+  const editingEvent = route.params?.event;
 
-const CreateEventScreen = ({ navigation }: any) => {
-  const [title, setTitle] = useState('');
-  const [desc, setDesc] = useState('');
+  const [title, setTitle] = useState(editingEvent?.title || '');
+  const [desc, setDesc] = useState(editingEvent?.description || '');
+  const [location, setLocation] = useState(editingEvent?.location || '');
+  const [image, setImage] = useState<string | null>(editingEvent?.image || null);
+  
+  // Date and Time State
+  const [date, setDate] = useState(editingEvent?.date ? new Date(editingEvent.date) : new Date());
+  const [showPicker, setShowPicker] = useState<'date' | 'time' | null>(null);
+
+  useEffect(() => {
+    if (editingEvent) {
+      setTitle(editingEvent.title || '');
+      setDesc(editingEvent.description || '');
+      setLocation(editingEvent.location || '');
+      setImage(editingEvent.image || null);
+      if (editingEvent.date) {
+        setDate(new Date(editingEvent.date));
+      }
+    }
+  }, [editingEvent]);
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
+
+  const onDateTimeChange = (event: any, selectedDate?: Date) => {
+    setShowPicker(null);
+    if (selectedDate) setDate(selectedDate);
+  };
 
   return (
-    <View style={styles.container}>
-      <LinearGradient colors={['#001529', '#003366']} style={styles.background} />
-      
-      <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
         <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-                <Text style={styles.backIcon}>⬅️</Text>
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Create New Event</Text>
-            <View style={{ width: 24 }} /> {/* Spacer for centering */}
+          <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backArrow}>←</Text></TouchableOpacity>
+          <Text style={styles.headerTitle}>{editingEvent ? 'Edit Event' : 'Create Event'}</Text>
         </View>
 
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1 }}
-        >
-          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            
-            {/* 1. Image Upload Placeholder */}
-            <TouchableOpacity style={styles.imageUploadBox}>
-               <Text style={styles.uploadIcon}>🖼️</Text>
-               <Text style={styles.uploadText}>Upload Event Banner</Text>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* Image Upload Area */}
+          <TouchableOpacity style={styles.imageBox} onPress={pickImage}>
+            {image ? (
+              <Image source={{ uri: image }} style={styles.fullImg} />
+            ) : (
+              <Text style={styles.uploadText}>📷 Tap to Upload Event Cover</Text>
+            )}
+          </TouchableOpacity>
+
+          <Text style={styles.label}>Title</Text>
+          <TextInput style={styles.input} value={title} onChangeText={setTitle} />
+
+          {/* Date & Time Pickers */}
+          <View style={styles.row}>
+            <TouchableOpacity style={[styles.input, { flex: 1, marginRight: 10 }]} onPress={() => setShowPicker('date')}>
+              <Text style={{color: '#fff'}}>{date.toDateString()}</Text>
             </TouchableOpacity>
+            <TouchableOpacity style={[styles.input, { flex: 1 }]} onPress={() => setShowPicker('time')}>
+              <Text style={{color: '#fff'}}>{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+            </TouchableOpacity>
+          </View>
 
-            {/* 2. Form Card */}
-            <View style={styles.formCard}>
-              <Text style={styles.label}>Event Title</Text>
-              <TextInput 
-                style={styles.input} 
-                placeholder="e.g. Annual Hackathon" 
-                placeholderTextColor="rgba(255,255,255,0.3)"
-                value={title}
-                onChangeText={setTitle}
-              />
+          {showPicker && (
+            <DateTimePicker
+              value={date}
+              mode={showPicker}
+              display="default"
+              onChange={onDateTimeChange}
+            />
+          )}
 
-              <View style={styles.row}>
-                <View style={{ flex: 1, marginRight: 10 }}>
-                  <Text style={styles.label}>Date</Text>
-                  <TextInput 
-                    style={styles.input} 
-                    placeholder="DD/MM/YYYY" 
-                    placeholderTextColor="rgba(255,255,255,0.3)"
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.label}>Time</Text>
-                  <TextInput 
-                    style={styles.input} 
-                    placeholder="HH:MM AM/PM" 
-                    placeholderTextColor="rgba(255,255,255,0.3)"
-                  />
-                </View>
-              </View>
+          <Text style={styles.label}>Location</Text>
+          <TextInput style={styles.input} value={location} onChangeText={setLocation} />
 
-              <Text style={styles.label}>Location</Text>
-              <TextInput 
-                style={styles.input} 
-                placeholder="e.g. 6-Kill Campus, Hall 4" 
-                placeholderTextColor="rgba(255,255,255,0.3)"
-              />
+          <Text style={styles.label}>Description</Text>
+          <TextInput style={[styles.input, { height: 100 }]} multiline value={desc} onChangeText={setDesc} />
 
-              <Text style={styles.label}>Description</Text>
-              <TextInput 
-                style={[styles.input, styles.textArea]} 
-                placeholder="Tell students what the event is about..." 
-                placeholderTextColor="rgba(255,255,255,0.3)"
-                multiline
-                numberOfLines={4}
-                value={desc}
-                onChangeText={setDesc}
-              />
-
-              <TouchableOpacity style={styles.publishBtn} onPress={() => navigation.navigate('Home')}>
-                <LinearGradient
-                  colors={['#00d2ff', '#3a7bd5']}
-                  start={{x: 0, y: 0}}
-                  end={{x: 1, y: 0}}
-                  style={styles.btnGradient}
-                >
-                  <Text style={styles.btnText}>Publish Event</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </View>
+          <TouchableOpacity style={styles.submitBtn} onPress={() => navigation.goBack()}>
+            <Text style={styles.submitText}>{editingEvent ? 'Save Changes' : 'Submit for Approval'}</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  background: { ...StyleSheet.absoluteFillObject },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
-  headerTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
-  backIcon: { fontSize: 22, color: '#fff' },
-  scrollContent: { padding: 20 },
-  imageUploadBox: {
-    width: '100%',
-    height: 180,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: 'rgba(0, 210, 255, 0.3)',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20
-  },
-  uploadIcon: { fontSize: 40, marginBottom: 10 },
-  uploadText: { color: 'rgba(255,255,255,0.5)', fontWeight: '600' },
-  formCard: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 25,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)'
-  },
-  label: { color: '#00d2ff', fontSize: 14, fontWeight: 'bold', marginBottom: 8, marginTop: 15 },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 12,
-    padding: 15,
-    color: '#fff',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)'
-  },
+  safeArea: { flex: 1, backgroundColor: '#000b18' },
+  container: { flex: 1, paddingHorizontal: 20 },
+  header: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
+  backArrow: { color: '#00d2ff', fontSize: 32, fontWeight: 'bold', marginRight: 15 },
+  headerTitle: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
+  imageBox: { height: 180, backgroundColor: '#0c1a2b', borderRadius: 20, borderStyle: 'dashed', borderWidth: 1, borderColor: '#3a7bd5', justifyContent: 'center', alignItems: 'center', marginBottom: 20, overflow: 'hidden' },
+  fullImg: { width: '100%', height: '100%' },
+  uploadText: { color: '#3a7bd5', fontWeight: 'bold' },
+  label: { color: '#00d2ff', fontSize: 11, fontWeight: 'bold', marginBottom: 8, textTransform: 'uppercase' },
+  input: { backgroundColor: '#0c1a2b', borderRadius: 12, padding: 15, color: '#fff', marginBottom: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   row: { flexDirection: 'row' },
-  textArea: { height: 100, textAlignVertical: 'top' },
-  publishBtn: { height: 55, borderRadius: 15, overflow: 'hidden', marginTop: 30 },
-  btnGradient: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  btnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' }
+  submitBtn: { backgroundColor: '#00d2ff', padding: 20, borderRadius: 15, alignItems: 'center', marginBottom: 40 },
+  submitText: { color: '#000b18', fontWeight: 'bold' }
 });
 
 export default CreateEventScreen;

@@ -1,24 +1,46 @@
 import React, { useState } from 'react';
 import { 
   StyleSheet, View, Text, TextInput, TouchableOpacity, 
-  Image, KeyboardAvoidingView, Platform, Dimensions 
+  Image, KeyboardAvoidingView, Platform, Dimensions, Alert 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import api, { saveAccessToken } from '../services/apiService';
 
 const { width } = Dimensions.get('window');
 
-const LoginScreen = ({ navigation }: any) => {
+const LoginScreen = ({ route, navigation }: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { setUserRole } = route.params || {};
 
-  const handleLogin = () => {
-    const lowerEmail = email.toLowerCase();
-    if (lowerEmail === 'admin@aau.edu.et') {
-      navigation.navigate('AdminApproval');
-    } else if (lowerEmail.includes('organizer')) {
-      navigation.navigate('Home', { userRole: 'Organizer' });
-    } else {
-      navigation.navigate('Home', { userRole: 'Student' });
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Login required', 'Please enter both email and password.');
+      return;
+    }
+
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      const user = response.data?.user;
+      const accessToken = response.data?.accessToken;
+
+      if (!user || !accessToken) {
+        throw new Error('Unexpected server response.');
+      }
+
+      await saveAccessToken(accessToken);
+
+      const role = user.role || (user.email?.toLowerCase().includes('admin') ? 'Admin' : user.email?.toLowerCase().includes('organizer') ? 'Organizer' : 'Student');
+      setUserRole?.(role);
+      const nextRoute = role === 'Admin' ? 'AdminDashboard' : role === 'Organizer' ? 'OrganizerDashboard' : 'Home';
+
+      navigation.reset({
+        index: 0,
+        routes: [{ name: nextRoute, params: { userRole: role, setUserRole } }],
+      });
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.message || 'Login failed. Please try again.';
+      Alert.alert('Login failed', message);
     }
   };
 

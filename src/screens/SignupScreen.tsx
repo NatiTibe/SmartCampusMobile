@@ -10,15 +10,18 @@ import {
   Platform,
   useWindowDimensions,
   ScrollView,
-  SafeAreaView
+  SafeAreaView,
+  Alert
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import api, { saveAccessToken } from '../services/apiService';
 
-const SignupScreen = ({ navigation }: any) => {
+const SignupScreen = ({ route, navigation }: any) => {
+  const { setUserRole } = route.params || {};
   const { width, height } = useWindowDimensions();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [dept, setDept] = useState('');
+  const [studentId, setStudentId] = useState('');
   const [password, setPassword] = useState('');
 
   return (
@@ -75,15 +78,16 @@ const SignupScreen = ({ navigation }: any) => {
                 />
               </View>
 
-              {/* Department */}
+              {/* Student ID */}
               <View style={styles.inputBox}>
-                <Text style={styles.inputIcon}>🏫</Text>
+                <Text style={styles.inputIcon}>🆔</Text>
                 <TextInput
                   style={styles.textField}
-                  placeholder="Department (e.g. IT, SE)"
+                  placeholder="Student ID"
                   placeholderTextColor="rgba(255,255,255,0.4)"
-                  value={dept}
-                  onChangeText={setDept}
+                  value={studentId}
+                  onChangeText={setStudentId}
+                  autoCapitalize="characters"
                 />
               </View>
 
@@ -100,7 +104,38 @@ const SignupScreen = ({ navigation }: any) => {
                 />
               </View>
 
-              <TouchableOpacity style={styles.signupBtn} onPress={() => navigation.navigate('Login')}>
+              <TouchableOpacity style={styles.signupBtn} onPress={async () => {
+                if (!name || !email || !studentId || !password) {
+                  Alert.alert('Sign up required', 'Please fill in all fields.');
+                  return;
+                }
+
+                try {
+                  const response = await api.post('/auth/signin', {
+                    fullName: name,
+                    studentId,
+                    email,
+                    password,
+                  });
+                  const user = response.data?.user;
+                  const accessToken = response.data?.accessToken;
+
+                  if (!user || !accessToken) {
+                    throw new Error('Unexpected server response.');
+                  }
+
+                  await saveAccessToken(accessToken);
+                  const role = user.role || 'Student';
+                  setUserRole?.(role);
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Home', params: { userRole: role, setUserRole } }],
+                  });
+                } catch (error: any) {
+                  const message = error?.response?.data?.message || error?.message || 'Could not create account. Please try again.';
+                  Alert.alert('Sign up failed', message);
+                }
+              }}>
                 <LinearGradient
                   colors={['#00d2ff', '#3a7bd5']}
                   start={{x: 0, y: 0}}

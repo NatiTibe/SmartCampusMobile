@@ -1,11 +1,43 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   StyleSheet, View, Text, FlatList, TouchableOpacity, 
-  Image, SafeAreaView, ScrollView, Modal 
+  Image, SafeAreaView, ScrollView, Modal, useWindowDimensions 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import api from '../services/apiService';
 
-const HomeScreen = ({ navigation }: any) => {
+const HomeScreen = ({ route, navigation }: any) => {
+  const { setUserRole, userRole = 'Student' } = route.params || {};
+  const nextRole = userRole === 'Student' ? 'Organizer' : userRole === 'Organizer' ? 'Admin' : 'Student';
+  const nextRoute = userRole === 'Student' ? 'OrganizerDashboard' : userRole === 'Organizer' ? 'AdminDashboard' : 'Home';
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await api.get('/event/all-events');
+        const backendEvents = response.data?.events || [];
+        if (backendEvents.length > 0) {
+          setEvents(backendEvents.map((ev: any) => ({
+            id: ev._id || ev.id,
+            title: ev.title || '',
+            category: ev.category?.name || ev.category || 'General',
+            location: ev.location || 'Campus',
+            date: ev.startDate ? new Date(ev.startDate).toDateString() : ev.date || '',
+            time: ev.startTime || ev.time || '',
+            registrationCount: ev.registrationCount || ev.registeredCount || 0,
+            isRegistered: false,
+            image: ev.imageUrl || ev.image || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4',
+            description: ev.description || '',
+          })));
+        }
+      } catch (error) {
+        console.log('Failed to load backend events', error);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
   // 1. App State: Categories the student follows
   const [userSubscriptions] = useState(['Tech', 'Social']); 
 
@@ -52,23 +84,36 @@ const HomeScreen = ({ navigation }: any) => {
     [...events].sort((a, b) => b.registrationCount - a.registrationCount), 
   [events]);
 
+  const { width: windowWidth } = useWindowDimensions();
+  const miniCardWidth = Math.min(260, windowWidth * 0.72);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         
-        {/* --- HEADER WITH PROFILE BUTTON --- */}
+        {/* --- HEADER WITH PROFILE BUTTON & ROLE SWITCH --- */}
 <View style={styles.topHeader}>
   <View>
     <Text style={styles.welcomeText}>Hello, Student!</Text>
     <Text style={styles.subWelcome}>Welcome back to Smart Campus</Text>
   </View>
-  <TouchableOpacity 
-    style={styles.profileCircle} 
-    onPress={() => navigation.navigate('Profile')}
-  >
-    {/* You can use an Image here if you have a default avatar */}
-    <Text style={{fontSize: 20}}>👤</Text>
-  </TouchableOpacity>
+  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+    <TouchableOpacity 
+      style={[styles.profileCircle, { marginRight: 10 }]} 
+      onPress={() => navigation.navigate('Profile')}
+    >
+      <Text style={{fontSize: 20}}>👤</Text>
+    </TouchableOpacity>
+    <TouchableOpacity 
+      style={[styles.profileCircle, { backgroundColor: '#FF3B30' }]}
+      onPress={() => {
+        setUserRole?.(nextRole);
+        navigation.navigate(nextRoute, { userRole: nextRole, setUserRole });
+      }}
+    >
+      <Text style={{fontSize: 14, color: '#fff', fontWeight: 'bold' }}>{`Switch to ${nextRole}`}</Text>
+    </TouchableOpacity>
+  </View>
 </View>
         {/* --- HERO SECTION --- */}
         <LinearGradient colors={['#3a7bd5', '#00d2ff']} style={styles.heroCard}>
@@ -108,7 +153,7 @@ const HomeScreen = ({ navigation }: any) => {
             contentContainerStyle={{ paddingLeft: 20 }}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <TouchableOpacity style={styles.miniCard} onPress={() => { setSelectedEvent(item); setModalVisible(true); }}>
+              <TouchableOpacity style={[styles.miniCard, { width: miniCardWidth }]} onPress={() => { setSelectedEvent(item); setModalVisible(true); }}>
                 <Image source={{ uri: item.image }} style={styles.miniImage} />
                 <View style={styles.miniBadge}><Text style={styles.miniBadgeText}>{item.category}</Text></View>
                 <Text style={styles.miniTitle}>{item.title}</Text>

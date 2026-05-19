@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
@@ -10,7 +10,7 @@ import EventDetailsScreen from './src/screens/EventDetailsScreen';
 import CreateEventScreen from './src/screens/CreateEventScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import OrganizerDashboard from './src/screens/OrganizerDashboard';
-import AdminApprovalScreen from './src/screens/AdminApprovalScreen';
+import AdminDashboardScreen from './src/screens/AdminDashboard';
 import BrowseEventsScreen from './src/screens/BrowseEventsScreen';
 import ScheduleScreen from './src/screens/ScheduleScreen';
 import AIPicksScreen from './src/screens/AIPicksScreen';
@@ -20,17 +20,51 @@ import PopularExploreScreen from './src/screens/PopularExploreScreen';
 const Stack = createStackNavigator();
 
 export default function App() {
+  // State to track current user role
+  const [userRole, setUserRole] = useState('Student'); // 'Student' or 'Organizer'
+
+  // Determine initial route based on user role (Login first, then role determines dashboard)
+  const getInitialRoute = () => {
+    // Always start at Login, user will navigate to dashboard after login
+    return 'Login';
+  };
+
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+      <Stack.Navigator initialRouteName={getInitialRoute()}>
+        <Stack.Screen 
+          name="Login" 
+          component={LoginScreen} 
+          options={{ headerShown: false }}
+          initialParams={{ setUserRole }}
+        />
+        <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} initialParams={{ setUserRole }} />
+        <Stack.Screen 
+          name="Home" 
+          component={HomeScreen} 
+          options={{ headerShown: false }}
+          initialParams={{ setUserRole, userRole }}
+        />
         <Stack.Screen name="EventDetails" component={EventDetailsScreen} options={{ headerShown: false }} />
         <Stack.Screen name="CreateEvent" component={CreateEventScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="OrganizerDashboard" component={OrganizerDashboard} options={{ headerShown: false }} />
-        <Stack.Screen name="AdminApproval" component={AdminApprovalScreen} options={{ headerShown: false }} />
+        <Stack.Screen 
+          name="Profile" 
+          component={ProfileScreen} 
+          options={{ headerShown: false }}
+          initialParams={{ setUserRole, userRole }}
+        />
+        <Stack.Screen 
+          name="OrganizerDashboard" 
+          component={OrganizerDashboard} 
+          options={{ headerShown: false }}
+          initialParams={{ setUserRole, userRole }}
+        />
+        <Stack.Screen 
+          name="AdminDashboard" 
+          component={AdminDashboardScreen} 
+          options={{ headerShown: false }}
+          initialParams={{ setUserRole, userRole }}
+        />
         <Stack.Screen name="Schedule" component={ScheduleScreen} options={{ headerShown: false }} />
         <Stack.Screen name="AIPicks" component={AIPicksScreen} options={{ headerShown: false }} />
         <Stack.Screen 
