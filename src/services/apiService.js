@@ -7,6 +7,11 @@ const api = axios.create({
   withCredentials: true,
 });
 
+export const apiClient = axios.create({
+  baseURL: 'https://smart-campus-event-management-and.onrender.com/api',
+  withCredentials: true,
+});
+
 export const setAuthToken = (token) => {
   if (token) {
     api.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -31,6 +36,13 @@ export const loadStoredToken = async () => {
     setAuthToken(token);
   }
   return token;
+};
+
+export const getErrorMessage = (error) => {
+  if (error.response && error.response.data && error.response.data.message) {
+    return error.response.data.message;
+  }
+  return 'Something went wrong. Please try again.';
 };
 
 export default api;

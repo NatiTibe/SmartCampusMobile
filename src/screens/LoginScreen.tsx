@@ -4,13 +4,15 @@ import {
   Image, KeyboardAvoidingView, Platform, Dimensions, Alert 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import api, { saveAccessToken } from '../services/apiService';
+import { getErrorMessage } from '../services/apiService';
+import { login } from '../services/authService';
 
 const { width } = Dimensions.get('window');
 
 const LoginScreen = ({ route, navigation }: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const { setUserRole } = route.params || {};
 
   const handleLogin = async () => {
@@ -19,16 +21,9 @@ const LoginScreen = ({ route, navigation }: any) => {
       return;
     }
 
+    setError(null);
     try {
-      const response = await api.post('/auth/login', { email, password });
-      const user = response.data?.user;
-      const accessToken = response.data?.accessToken;
-
-      if (!user || !accessToken) {
-        throw new Error('Unexpected server response.');
-      }
-
-      await saveAccessToken(accessToken);
+      const { user, accessToken } = await login({ email, password });
 
       const role = user.role || (user.email?.toLowerCase().includes('admin') ? 'Admin' : user.email?.toLowerCase().includes('organizer') ? 'Organizer' : 'Student');
       setUserRole?.(role);
@@ -38,9 +33,10 @@ const LoginScreen = ({ route, navigation }: any) => {
         index: 0,
         routes: [{ name: nextRoute, params: { userRole: role, setUserRole } }],
       });
-    } catch (error: any) {
-      const message = error?.response?.data?.message || error?.message || 'Login failed. Please try again.';
-      Alert.alert('Login failed', message);
+    } catch (err: any) {
+      const friendlyMessage = getErrorMessage(err);
+      setError(friendlyMessage);
+      Alert.alert('Login failed', friendlyMessage);
     }
   };
 
@@ -98,6 +94,8 @@ const LoginScreen = ({ route, navigation }: any) => {
               />
             </View>
           </View>
+
+          {error && <Text style={styles.errorText}>{error}</Text>}
 
           <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
             <LinearGradient 
@@ -198,6 +196,8 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', marginTop: 25 },
   footerText: { color: 'rgba(255,255,255,0.6)', fontSize: 14 },
   signupText: { color: '#00d2ff', fontWeight: 'bold', fontSize: 14 }
+  ,
+  errorText: { color: '#ff6b6b', marginTop: 8, textAlign: 'center' }
 });
 
 export default LoginScreen;
