@@ -14,7 +14,7 @@ import {
   Alert
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import api, { saveAccessToken } from '../services/apiService';
+import api, { saveAccessToken, getErrorMessage } from '../services/apiService';
 
 const SignupScreen = ({ route, navigation }: any) => {
   const { setUserRole } = route.params || {};
@@ -23,6 +23,7 @@ const SignupScreen = ({ route, navigation }: any) => {
   const [email, setEmail] = useState('');
   const [studentId, setStudentId] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   return (
     <View style={styles.container}>
@@ -105,6 +106,7 @@ const SignupScreen = ({ route, navigation }: any) => {
               </View>
 
               <TouchableOpacity style={styles.signupBtn} onPress={async () => {
+                setErrorMessage('');
                 if (!name || !email || !studentId || !password) {
                   Alert.alert('Sign up required', 'Please fill in all fields.');
                   return;
@@ -132,7 +134,8 @@ const SignupScreen = ({ route, navigation }: any) => {
                     routes: [{ name: 'Home', params: { userRole: role, setUserRole } }],
                   });
                 } catch (error: any) {
-                  const message = error?.response?.data?.message || error?.message || 'Could not create account. Please try again.';
+                  const message = getErrorMessage(error);
+                  setErrorMessage(message);
                   Alert.alert('Sign up failed', message);
                 }
               }}>
@@ -145,6 +148,8 @@ const SignupScreen = ({ route, navigation }: any) => {
                   <Text style={styles.btnText}>Create Account</Text>
                 </LinearGradient>
               </TouchableOpacity>
+
+              {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
               <TouchableOpacity style={styles.footerLink} onPress={() => navigation.navigate('Login')}>
                 <Text style={styles.footerText}>
@@ -219,7 +224,8 @@ const styles = StyleSheet.create({
   btnText: { color: '#fff', fontSize: 16, fontWeight: '900' },
   footerLink: { marginTop: 18, alignItems: 'center' },
   footerText: { color: 'rgba(255,255,255,0.75)', fontSize: 13 },
-  boldText: { fontWeight: '700', color: '#00d2ff' }
+  boldText: { fontWeight: '700', color: '#00d2ff' },
+  errorText: { color: '#ff6b6b', marginTop: 10, textAlign: 'center' }
 });
 
 export default SignupScreen;
