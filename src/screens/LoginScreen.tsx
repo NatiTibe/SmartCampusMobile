@@ -34,9 +34,9 @@ const LoginScreen = ({ route, navigation }: any) => {
         routes: [{ name: nextRoute, params: { userRole: role, setUserRole } }],
       });
     } catch (err: any) {
-      const friendlyMessage = getErrorMessage(err);
-      setError(friendlyMessage);
-      Alert.alert('Login failed', friendlyMessage);
+      const message = err?.message || getErrorMessage(err);
+      setError(message);
+      Alert.alert('Login failed', message);
     }
   };
 
