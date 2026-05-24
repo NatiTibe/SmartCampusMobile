@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getErrorMessage } from '../services/apiService';
-import { login } from '../services/authService';
+import { login, forgotPassword } from '../services/authService';
 
 const { width } = Dimensions.get('window');
 
@@ -13,6 +13,9 @@ const LoginScreen = ({ route, navigation }: any) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
   const { setUserRole } = route.params || {};
 
   const handleLogin = async () => {
@@ -63,6 +66,25 @@ const LoginScreen = ({ route, navigation }: any) => {
       const message = err?.message || 'Navigation failed. Please try again.';
       setError(message);
       Alert.alert('Login failed', message);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!resetEmail) {
+      Alert.alert('Email required', 'Please enter your email address.');
+      return;
+    }
+
+    setError(null);
+    setResetMessage(null);
+
+    try {
+      const response = await forgotPassword(resetEmail);
+      const message = response?.message || 'If an account exists for that email, a reset link has been sent.';
+      setResetMessage(message);
+    } catch (err: any) {
+      const message = err?.message || getErrorMessage(err);
+      setError(message);
     }
   };
 
@@ -132,6 +154,45 @@ const LoginScreen = ({ route, navigation }: any) => {
               <Text style={styles.loginBtnText}>Log in</Text>
             </LinearGradient>
           </TouchableOpacity>
+
+          <TouchableOpacity style={styles.forgotButton} onPress={() => {
+            setShowResetForm(true);
+            setResetEmail(email);
+            setResetMessage(null);
+            setError(null);
+          }}>
+            <Text style={styles.forgotText}>Forgot password?</Text>
+          </TouchableOpacity>
+
+          {showResetForm && (
+            <View style={styles.resetContainer}>
+              <Text style={styles.resetTitle}>Reset Password</Text>
+              <TextInput
+                placeholder="Enter your email"
+                placeholderTextColor="rgba(255,255,255,0.5)"
+                value={resetEmail}
+                onChangeText={setResetEmail}
+                style={styles.resetInput}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              <TouchableOpacity style={styles.resetBtn} onPress={handleForgotPassword}>
+                <LinearGradient
+                  colors={['#00d2ff', '#3a7bd5']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.btnGradient}
+                >
+                  <Text style={styles.loginBtnText}>Send reset link</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowResetForm(false)}>
+                <Text style={styles.cancelResetText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {resetMessage ? <Text style={styles.resetMessage}>{resetMessage}</Text> : null}
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don't have an account? </Text>
@@ -221,8 +282,15 @@ const styles = StyleSheet.create({
 
   footer: { flexDirection: 'row', marginTop: 25 },
   footerText: { color: 'rgba(255,255,255,0.6)', fontSize: 14 },
-  signupText: { color: '#00d2ff', fontWeight: 'bold', fontSize: 14 }
-  ,
+  signupText: { color: '#00d2ff', fontWeight: 'bold', fontSize: 14 },
+  forgotButton: { marginTop: 16 },
+  forgotText: { color: '#8fbfff', fontSize: 14, textDecorationLine: 'underline' },
+  resetContainer: { width: '100%', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 20, padding: 16, marginTop: 16 },
+  resetTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 12, textAlign: 'center' },
+  resetInput: { width: '100%', color: '#fff', fontSize: 16, paddingHorizontal: 14, paddingVertical: 12, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' },
+  resetBtn: { width: '100%', height: 50, borderRadius: 20, overflow: 'hidden', marginBottom: 10 },
+  cancelResetText: { color: '#ddd', textAlign: 'center', marginTop: 10 },
+  resetMessage: { color: '#7ef2a0', marginTop: 12, textAlign: 'center' },
   errorText: { color: '#ff6b6b', marginTop: 8, textAlign: 'center' }
 });
 
