@@ -23,18 +23,39 @@ const LoginScreen = ({ route, navigation }: any) => {
 
     setError(null);
     try {
-      const { user, accessToken } = await login({ email, password });
+      // 1. Await the login response
+      const responseData = await login({ email, password });
+      
+      // 2. Destructure safely from responseData
+      const user = responseData.user;
+      
+      if (!user) {
+        throw new Error('User data missing from response');
+      }
 
-      const role = user.role || (user.email?.toLowerCase().includes('admin') ? 'Admin' : user.email?.toLowerCase().includes('organizer') ? 'Organizer' : 'Student');
+      // 3. Robust role determination
+      const role = user.role || 'Student';
       setUserRole?.(role);
-      const nextRoute = role === 'Admin' ? 'AdminDashboard' : role === 'Organizer' ? 'OrganizerDashboard' : 'Home';
 
+      // 4. Define route mapping
+      // Ensure these names ('AdminDashboard', 'OrganizerDashboard', 'Home') 
+      // match EXACTLY what is in your navigation setup (App.js/AppNavigator)
+      const routeMap: Record<string, string> = {
+        Admin: 'AdminDashboard',
+        Organizer: 'OrganizerDashboard',
+        Student: 'Home',
+      };
+
+      const nextRoute = routeMap[role] || 'Home';
+
+      // 5. Navigate
       navigation.reset({
         index: 0,
         routes: [{ name: nextRoute, params: { userRole: role, setUserRole } }],
       });
     } catch (err: any) {
-      const message = err?.message || getErrorMessage(err);
+      console.error('Login Navigation Error:', err);
+      const message = err?.message || 'Navigation failed. Please try again.';
       setError(message);
       Alert.alert('Login failed', message);
     }
