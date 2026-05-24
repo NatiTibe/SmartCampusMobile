@@ -1,6 +1,7 @@
 // src/services/apiService.js
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 const api = axios.create({
   baseURL: 'https://smart-campus-event-management-and.onrender.com/api',
@@ -22,16 +23,27 @@ export const setAuthToken = (token) => {
 
 export const saveAccessToken = async (token) => {
   if (token) {
-    await SecureStore.setItemAsync('accessToken', token);
+    if (Platform.OS === 'web') {
+      localStorage.setItem('accessToken', token);
+    } else {
+      await SecureStore.setItemAsync('accessToken', token);
+    }
     setAuthToken(token);
   } else {
-    await SecureStore.deleteItemAsync('accessToken');
+    if (Platform.OS === 'web') {
+      localStorage.removeItem('accessToken');
+    } else {
+      await SecureStore.deleteItemAsync('accessToken');
+    }
     setAuthToken(null);
   }
 };
 
 export const loadStoredToken = async () => {
-  const token = await SecureStore.getItemAsync('accessToken');
+  const token = Platform.OS === 'web'
+    ? localStorage.getItem('accessToken')
+    : await SecureStore.getItemAsync('accessToken');
+
   if (token) {
     setAuthToken(token);
   }

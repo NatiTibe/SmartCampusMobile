@@ -34,19 +34,24 @@ const LoginScreen = ({ route, navigation }: any) => {
       }
 
       // 3. Robust role determination
-      const role = user.role || 'Student';
+      const normalizedRole = String(user.role || 'student').toLowerCase();
+      const role = normalizedRole === 'admin'
+        ? 'Admin'
+        : normalizedRole === 'organizer'
+          ? 'Organizer'
+          : 'Student';
       setUserRole?.(role);
 
       // 4. Define route mapping
       // Ensure these names ('AdminDashboard', 'OrganizerDashboard', 'Home') 
       // match EXACTLY what is in your navigation setup (App.js/AppNavigator)
       const routeMap: Record<string, string> = {
-        Admin: 'AdminDashboard',
-        Organizer: 'OrganizerDashboard',
-        Student: 'Home',
+        admin: 'AdminDashboard',
+        organizer: 'OrganizerDashboard',
+        student: 'Home',
       };
 
-      const nextRoute = routeMap[role] || 'Home';
+      const nextRoute = routeMap[normalizedRole] || 'Home';
 
       // 5. Navigate
       navigation.reset({
