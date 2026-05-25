@@ -6,9 +6,6 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 
 const AdminDashboard = ({ route, navigation }: any) => {
-  const { setUserRole, userRole = 'Admin' } = route.params || {};
-  const nextRole = 'Student';
-  const nextRoute = 'Home';
   const { width } = useWindowDimensions();
   const eventImageSize = width > 420 ? 60 : 50;
   const reportMaxWidth = Math.min(width - 40, 620);
@@ -85,16 +82,7 @@ const AdminDashboard = ({ route, navigation }: any) => {
             <Text style={styles.headerSub}>Moderation & Statistics</Text>
           </View>
           
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <TouchableOpacity 
-              style={[styles.reportHeaderBtn, { backgroundColor: '#FF3B30', marginRight: 10 }]} 
-              onPress={() => {
-                setUserRole?.(nextRole);
-                navigation.navigate(nextRoute, { userRole: nextRole, setUserRole });
-              }}
-            >
-              <Text style={styles.reportHeaderBtnText}>🔄 Switch Student</Text>
-            </TouchableOpacity>
+          <View>
             <TouchableOpacity style={styles.reportHeaderBtn} onPress={() => setShowReport(true)}>
               <Text style={styles.reportHeaderBtnText}>📊 View Report</Text>
             </TouchableOpacity>
