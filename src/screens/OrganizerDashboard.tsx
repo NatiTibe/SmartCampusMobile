@@ -20,9 +20,6 @@ const MY_CREATED_EVENTS = [
 ];
 
 const OrganizerDashboard = ({ route, navigation }: any) => {
-  const { setUserRole, userRole = 'Organizer' } = route.params || {};
-  const nextRole = userRole === 'Organizer' ? 'Admin' : 'Student';
-  const nextRoute = userRole === 'Organizer' ? 'AdminDashboard' : 'Home';
   const { width } = useWindowDimensions();
   const statBoxBasis = width > 640 ? '48%' : '100%';
   const imageSize = width > 420 ? 70 : 60;
@@ -38,15 +35,6 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
             <Text style={styles.headerTitle}>Organizer Panel</Text>
             <Text style={styles.headerSub}>Manage your campus impact</Text>
           </View>
-          <TouchableOpacity 
-            style={styles.logoutBtn} 
-            onPress={() => {
-              setUserRole?.(nextRole);
-              navigation.navigate(nextRoute, { userRole: nextRole, setUserRole });
-            }}
-          >
-            <Text style={styles.logoutText}>{`Switch to ${nextRole}`}</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Quick Stats Summary */}
@@ -146,8 +134,6 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 25 },
   headerTitle: { color: '#fff', fontSize: 26, fontWeight: 'bold' },
   headerSub: { color: 'rgba(255,255,255,0.5)', fontSize: 13 },
-  logoutBtn: { padding: 8, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
-  logoutText: { color: '#fff', fontSize: 12 },
 
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25, flexWrap: 'wrap' },
   statBox: { flexBasis: '48%', backgroundColor: '#0c1a2b', padding: 20, borderRadius: 20, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', marginBottom: 10 },
