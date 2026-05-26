@@ -14,6 +14,37 @@ type SelectedImage = {
   file?: File;
 };
 
+const API_BASE_URL = 'https://smart-campus-event-management-and.onrender.com/api';
+
+const postFormDataOnWeb = (path: string, formData: FormData) => {
+  return new Promise<void>((resolve, reject) => {
+    const request = new XMLHttpRequest();
+
+    request.open('POST', `${API_BASE_URL}${path}`);
+
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      request.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
+
+    request.onload = () => {
+      if (request.status >= 200 && request.status < 300) {
+        resolve();
+        return;
+      }
+
+      try {
+        reject({ response: { data: JSON.parse(request.responseText) } });
+      } catch {
+        reject(new Error(request.responseText || 'Failed to create event.'));
+      }
+    };
+
+    request.onerror = () => reject(new Error('Network error while creating event.'));
+    request.send(formData);
+  });
+};
+
 const CreateEventScreen = ({ navigation }: any) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -103,8 +134,12 @@ const CreateEventScreen = ({ navigation }: any) => {
         } as any);
       }
 
-      // Axios automatically handles the headers for FormData
-      await api.post('/organizer/create', formData);
+      if (Platform.OS === 'web') {
+        await postFormDataOnWeb('/organizer/create', formData);
+      } else {
+        // Axios automatically handles the headers for FormData on native.
+        await api.post('/organizer/create', formData);
+      }
       Alert.alert('Success', 'Event submitted for approval!');
       navigation.navigate('OrganizerDashboard');
     } catch (error: any) {
