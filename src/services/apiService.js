@@ -13,6 +13,33 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
+// Helper function to safely fetch the token based on platform
+const fetchToken = async () => {
+  try {
+    return Platform.OS === 'web'
+      ? localStorage.getItem('accessToken')
+      : await SecureStore.getItemAsync('accessToken');
+  } catch (error) {
+    console.error("Error fetching token", error);
+    return null;
+  }
+};
+
+// NEW: Request Interceptor
+// This intercepts EVERY request right before it leaves your app and slaps the token on it.
+api.interceptors.request.use(
+  async (config) => {
+    const token = await fetchToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 export const setAuthToken = (token) => {
   if (token) {
     api.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -40,10 +67,7 @@ export const saveAccessToken = async (token) => {
 };
 
 export const loadStoredToken = async () => {
-  const token = Platform.OS === 'web'
-    ? localStorage.getItem('accessToken')
-    : await SecureStore.getItemAsync('accessToken');
-
+  const token = await fetchToken();
   if (token) {
     setAuthToken(token);
   }

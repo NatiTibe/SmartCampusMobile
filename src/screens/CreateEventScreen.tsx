@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, View, Text, TextInput, TouchableOpacity, 
-  SafeAreaView, ScrollView, Alert, Image, Platform 
+  SafeAreaView, ScrollView, Alert, Image 
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import api from '../services/apiService';
 
 const CreateEventScreen = ({ navigation, route }: any) => {
   // Check if we are editing an existing event
@@ -47,6 +48,40 @@ const CreateEventScreen = ({ navigation, route }: any) => {
   const onDateTimeChange = (event: any, selectedDate?: Date) => {
     setShowPicker(null);
     if (selectedDate) setDate(selectedDate);
+  };
+
+  const handleSubmit = async () => {
+    if (!title || !desc || !location) {
+      Alert.alert('Missing Fields', 'Please fill out the title, location, and description.');
+      return;
+    }
+
+    try {
+      // Format your payload to match what your backend expects
+      const payload = {
+        title,
+        description: desc,
+        location,
+        date: date.toISOString(), // Send the full ISO string
+        image, 
+        status: 'Pending' // Explicitly set it to pending
+      };
+
+      if (editingEvent) {
+        await api.put(`/event/update/${editingEvent.id}`, payload); 
+        Alert.alert('Success', 'Event updated successfully!');
+      } else {
+        await api.post('/event/create', payload); 
+        Alert.alert('Success', 'Event submitted for approval!');
+      }
+
+      // Navigate back only AFTER the api call succeeds
+      navigation.goBack();
+      
+    } catch (error) {
+      console.log('Failed to submit event:', error);
+      Alert.alert('Error', 'There was a problem submitting your event. Please try again.');
+    }
   };
 
   return (
@@ -95,7 +130,7 @@ const CreateEventScreen = ({ navigation, route }: any) => {
           <Text style={styles.label}>Description</Text>
           <TextInput style={[styles.input, { height: 100 }]} multiline value={desc} onChangeText={setDesc} />
 
-          <TouchableOpacity style={styles.submitBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
             <Text style={styles.submitText}>{editingEvent ? 'Save Changes' : 'Submit for Approval'}</Text>
           </TouchableOpacity>
         </ScrollView>
