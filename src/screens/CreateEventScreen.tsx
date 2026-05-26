@@ -55,7 +55,6 @@ const CreateEventScreen = ({ navigation }: any) => {
   const [image, setImage] = useState<SelectedImage | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -96,16 +95,13 @@ const CreateEventScreen = ({ navigation }: any) => {
         type,
         file: (asset as any).file,
       });
-      setSubmitError('');
     }
   };
 
   const handleSubmit = async () => {
-    setSubmitError('');
-
     // Validation
     if (!title || !description || !location || !capacity || !category || !image) {
-      setSubmitError('Please fill all fields and pick an image.');
+      Alert.alert('Error', 'Please fill all fields and pick an image.');
       return;
     }
 
@@ -148,7 +144,7 @@ const CreateEventScreen = ({ navigation }: any) => {
       setSubmitted(true);
     } catch (error: any) {
       console.log('Submission Error:', error.response?.data);
-      setSubmitError(error.response?.data?.message || error.message || 'Failed to create event.');
+      Alert.alert('Error', error.response?.data?.message || 'Failed to create event.');
     } finally {
       setLoading(false);
     }
@@ -201,8 +197,6 @@ const CreateEventScreen = ({ navigation }: any) => {
           <Text style={styles.uploadText}>{image ? 'Image Selected' : 'Tap to Upload Image'}</Text>
         </TouchableOpacity>
 
-        {submitError ? <Text style={styles.errorText}>{submitError}</Text> : null}
-
         <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={loading}>
           {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.submitText}>Submit for Approval</Text>}
         </TouchableOpacity>
@@ -219,7 +213,6 @@ const styles = StyleSheet.create({
   pickerContainer: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 15 },
   imageBox: { height: 100, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderRadius: 12 },
   uploadText: { color: '#fff' },
-  errorText: { color: '#ff6b6b', textAlign: 'center', marginBottom: 15, fontWeight: 'bold' },
   submitBtn: { backgroundColor: '#00d2ff', padding: 15, alignItems: 'center', borderRadius: 10 },
   submitText: { fontWeight: 'bold', color: '#000' },
   successContainer: {

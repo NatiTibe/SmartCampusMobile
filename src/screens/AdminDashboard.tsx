@@ -6,6 +6,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native'; // IMPORT ADDED
 import api from '../services/apiService';
+import { formatStatus } from '../services/eventDataService';
 
 const AdminDashboard = ({ route, navigation }: any) => {
   const { width } = useWindowDimensions();
@@ -19,17 +20,17 @@ const AdminDashboard = ({ route, navigation }: any) => {
     useCallback(() => {
       const fetchAdminEvents = async () => {
         try {
-          const response = await api.get('/event/all-events');
+          const response = await api.get('/admin/events');
           const backendEvents = response.data?.events || response.data || [];
           setEvents(backendEvents.map((ev: any) => ({
             id: ev._id || ev.id,
             title: ev.title || '',
-            organizer: ev.organizer?.name || ev.organizer || 'Campus Club',
+            organizer: ev.organizedBy?.organizationName || ev.organizer?.name || ev.organizer || 'Campus Club',
             category: ev.category?.name || ev.category || 'General',
             location: ev.location || 'Campus',
             date: ev.startDate ? new Date(ev.startDate).toDateString() : ev.date || '',
             time: ev.startTime || ev.time || '',
-            status: ev.status || 'Pending',
+            status: formatStatus(ev.status),
             registrations: ev.registrationCount || ev.registeredCount || 0,
             image: ev.imageUrl || ev.image || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4',
             description: ev.description || '',
@@ -62,19 +63,23 @@ const AdminDashboard = ({ route, navigation }: any) => {
 
   const handleUpdateStatus = async (id: string, newStatus: 'Approved' | 'Rejected' | 'Pending') => {
     try {
-      await api.put(`/event/update-status/${id}`, { status: newStatus });
+      if (newStatus === 'Approved') {
+        await api.patch(`/admin/approve/${id}`);
+      } else if (newStatus === 'Rejected') {
+        await api.patch(`/admin/reject/${id}`);
+      } else {
+        Alert.alert("Not Available", "The backend does not provide a route to revert events to pending.");
+        return;
+      }
+
       setEvents(prev => prev.map(ev => 
         ev.id === id ? { ...ev, status: newStatus } : ev
       ));
       setSelectedReview(null);
       Alert.alert("Status Updated", `Event status marked as ${newStatus}.`);
     } catch (error) {
-      console.log('Server update error, cascading locally', error);
-      setEvents(prev => prev.map(ev => 
-        ev.id === id ? { ...ev, status: newStatus } : ev
-      ));
-      setSelectedReview(null);
-      Alert.alert("Status Updated", `Event status marked as ${newStatus}.`);
+      console.log('Status update failed', error);
+      Alert.alert("Update Failed", "Could not update event status on the backend.");
     }
   };
 

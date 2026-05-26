@@ -1,51 +1,69 @@
-import React, { useState } from 'react';
-import { 
-  StyleSheet, View, Text, FlatList, TouchableOpacity, 
-  Modal, SafeAreaView, ScrollView 
+import React, { useState, useCallback } from 'react';
+import {
+  StyleSheet, View, Text, FlatList, TouchableOpacity,
+  SafeAreaView
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-
-const INITIAL_EVENTS = [
-  { id: '1', title: 'AAU Tech Expo 2026', location: '6 Kilo - Main Hall', time: 'May 10, 10:00 AM', description: 'Showcase of innovation.', isRegistered: false },
-  { id: '2', title: 'Entrepreneurship Seminar', location: 'Amist Kilo', time: 'May 12, 2:00 PM', description: 'Pitching and funding.', isRegistered: false },
-];
+import { useFocusEffect } from '@react-navigation/native';
+import { getApprovedEvents, registerForEvent, unregisterFromEvent } from '../services/eventDataService';
 
 const BrowseEventsScreen = ({ navigation }: any) => {
-  const [events, setEvents] = useState(INITIAL_EVENTS);
-  const [selectedEvent, setSelectedEvent] = useState<any>(null);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [events, setEvents] = useState<any[]>([]);
 
-  const handleRegister = (id: string) => {
-    setEvents(prev => prev.map(ev => ev.id === id ? { ...ev, isRegistered: !ev.isRegistered } : ev));
+  useFocusEffect(
+    useCallback(() => {
+      const fetchEvents = async () => {
+        try {
+          setEvents(await getApprovedEvents());
+        } catch (error) {
+          console.log('Failed to fetch events', error);
+        }
+      };
+
+      fetchEvents();
+    }, [])
+  );
+
+  const handleRegister = async (event: any) => {
+    try {
+      if (event.isRegistered) {
+        await unregisterFromEvent(event.id);
+      } else {
+        await registerForEvent(event.id);
+      }
+
+      setEvents(prev => prev.map(ev => ev.id === event.id ? { ...ev, isRegistered: !ev.isRegistered } : ev));
+    } catch (error) {
+      console.log('Registration update failed', error);
+    }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        
-        {/* --- HEADER WITH BACK BUTTON --- */}
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Active Events</Text>
         </View>
-        
+
         <FlatList
           data={events}
           keyExtractor={(item) => item.id}
+          ListEmptyComponent={<Text style={styles.emptyText}>No active events found.</Text>}
           renderItem={({ item }) => (
             <View style={styles.eventCard}>
-              <TouchableOpacity onPress={() => { setSelectedEvent(item); setModalVisible(true); }}>
+              <TouchableOpacity onPress={() => navigation.navigate('EventDetails', { eventId: item.id, event: item })}>
                 <Text style={styles.eventTitle}>{item.title}</Text>
-                <Text style={styles.eventMeta}>📍 {item.location}</Text>
+                <Text style={styles.eventMeta}>{item.date} • {item.location}</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleRegister(item.id)} style={styles.regBtnWrapper}>
+              <TouchableOpacity onPress={() => handleRegister(item)} style={styles.regBtnWrapper}>
                 <LinearGradient
                   colors={item.isRegistered ? ['#28a745', '#1e7e34'] : ['#00d2ff', '#3a7bd5']}
                   style={styles.regButton}
                 >
-                  <Text style={styles.regBtnText}>{item.isRegistered ? '✓ Registered' : 'Register'}</Text>
+                  <Text style={styles.regBtnText}>{item.isRegistered ? 'Registered' : 'Register'}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -68,7 +86,8 @@ const styles = StyleSheet.create({
   eventMeta: { color: 'rgba(255,255,255,0.6)', fontSize: 14, marginBottom: 15 },
   regBtnWrapper: { height: 45, borderRadius: 12, overflow: 'hidden' },
   regButton: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  regBtnText: { color: '#fff', fontWeight: 'bold' }
+  regBtnText: { color: '#fff', fontWeight: 'bold' },
+  emptyText: { color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginTop: 50 },
 });
 
 export default BrowseEventsScreen;

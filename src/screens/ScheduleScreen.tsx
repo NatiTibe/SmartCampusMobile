@@ -1,35 +1,52 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { StyleSheet, View, Text, FlatList, SafeAreaView, TouchableOpacity } from 'react-native';
-
-const REGISTERED_EVENTS = [
-  { id: '1', title: 'AAU Tech Expo', time: '10:00 AM', date: 'May 10', location: '6 Kilo Main Hall' },
-];
+import { useFocusEffect } from '@react-navigation/native';
+import { getStudentEvents } from '../services/eventDataService';
 
 const ScheduleScreen = ({ navigation }: any) => {
+  const [events, setEvents] = useState<any[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchSchedule = async () => {
+        try {
+          const data = await getStudentEvents();
+          setEvents(data.registeredEvents);
+        } catch (error) {
+          console.log('Failed to fetch schedule', error);
+        }
+      };
+
+      fetchSchedule();
+    }, [])
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        
-        {/* --- HEADER WITH BACK BUTTON --- */}
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
           <View>
             <Text style={styles.headerTitle}>My Schedule</Text>
-            <Text style={styles.headerSub}>You have {REGISTERED_EVENTS.length} events</Text>
+            <Text style={styles.headerSub}>You have {events.length} events</Text>
           </View>
         </View>
 
         <FlatList
-          data={REGISTERED_EVENTS}
+          data={events}
+          ListEmptyComponent={<Text style={styles.emptyText}>No registered events yet.</Text>}
           renderItem={({ item }) => (
             <View style={styles.timelineRow}>
               <View style={styles.timeColumn}><Text style={styles.timeText}>{item.time}</Text></View>
-              <TouchableOpacity style={styles.scheduleCard}>
+              <TouchableOpacity
+                style={styles.scheduleCard}
+                onPress={() => navigation.navigate('EventDetails', { eventId: item.id, event: item })}
+              >
                 <Text style={styles.dateBadge}>{item.date}</Text>
                 <Text style={styles.eventTitle}>{item.title}</Text>
-                <Text style={styles.locationText}>📍 {item.location}</Text>
+                <Text style={styles.locationText}>{item.location}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -54,7 +71,8 @@ const styles = StyleSheet.create({
   scheduleCard: { flex: 1, backgroundColor: '#0c1a2b', borderRadius: 20, padding: 15, marginBottom: 15, borderLeftWidth: 4, borderLeftColor: '#3a7bd5' },
   dateBadge: { color: '#00d2ff', fontSize: 12, fontWeight: 'bold', marginBottom: 5 },
   eventTitle: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
-  locationText: { color: 'rgba(255,255,255,0.6)', fontSize: 13 }
+  locationText: { color: 'rgba(255,255,255,0.6)', fontSize: 13 },
+  emptyText: { color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginTop: 50 },
 });
 
 export default ScheduleScreen;

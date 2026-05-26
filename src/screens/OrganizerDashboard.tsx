@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../services/apiService';
+import { formatStatus } from '../services/eventDataService';
 
 const OrganizerDashboard = ({ navigation }: any) => {
   const [events, setEvents] = useState<any[]>([]);
@@ -23,7 +24,10 @@ const OrganizerDashboard = ({ navigation }: any) => {
     try {
       // Calling the backend route defined in organizerRoutes.ts
       const response = await api.get('/organizer/events');
-      setEvents(response.data.events || []);
+      setEvents((response.data.events || []).map((event: any) => ({
+        ...event,
+        status: formatStatus(event.status),
+      })));
     } catch (error: any) {
       console.error('Error fetching events:', error);
       Alert.alert('Error', 'Could not load your events.');
@@ -44,7 +48,7 @@ const OrganizerDashboard = ({ navigation }: any) => {
         <Text style={styles.details}>{item.location}</Text>
         <Text style={styles.details}>Date: {new Date(item.startDate).toLocaleDateString()}</Text>
       </View>
-      <View style={[styles.statusTag, { backgroundColor: item.status === 'Approved' ? '#00ff9d' : '#ffcc00' }]}>
+      <View style={[styles.statusTag, { backgroundColor: item.status === 'Approved' ? '#00ff9d' : item.status === 'Rejected' ? '#ff6b6b' : '#ffcc00' }]}>
         <Text style={styles.statusText}>{item.status || 'Pending'}</Text>
       </View>
     </View>

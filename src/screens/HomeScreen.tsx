@@ -1,30 +1,33 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { 
   StyleSheet, View, Text, FlatList, TouchableOpacity, 
   Image, SafeAreaView, ScrollView, Modal, useWindowDimensions 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import api from '../services/apiService';
+import { useFocusEffect } from '@react-navigation/native';
+import { getApprovedEvents, getStudentEvents, registerForEvent, unregisterFromEvent } from '../services/eventDataService';
 
 const HomeScreen = ({ route, navigation }: any) => {
-  useEffect(() => {
-    const fetchEvents = async () => {
+  const [events, setEvents] = useState<any[]>([]);
+  const [popularEvents, setPopularEvents] = useState<any[]>([]);
+  const [registeredEvents, setRegisteredEvents] = useState<any[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const fetchEvents = async () => {
       try {
-        const response = await api.get('/event/all-events');
-        const backendEvents = response.data?.events || [];
-        if (backendEvents.length > 0) {
-          setEvents(backendEvents.map((ev: any) => ({
-            id: ev._id || ev.id,
-            title: ev.title || '',
-            category: ev.category?.name || ev.category || 'General',
-            location: ev.location || 'Campus',
-            date: ev.startDate ? new Date(ev.startDate).toDateString() : ev.date || '',
-            time: ev.startTime || ev.time || '',
-            registrationCount: ev.registrationCount || ev.registeredCount || 0,
-            isRegistered: false,
-            image: ev.imageUrl || ev.image || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4',
-            description: ev.description || '',
-          })));
+        const [approved, studentData] = await Promise.all([
+          getApprovedEvents(),
+          getStudentEvents(),
+        ]);
+
+        if (isActive) {
+          const registeredIds = new Set(studentData.registeredEvents.map((event: any) => event.id));
+          setEvents(approved.map((event: any) => ({ ...event, isRegistered: registeredIds.has(event.id) })));
+          setPopularEvents(studentData.popularEvents.length ? studentData.popularEvents : approved);
+          setRegisteredEvents(studentData.registeredEvents);
         }
       } catch (error) {
         console.log('Failed to load backend events', error);
@@ -32,42 +35,38 @@ const HomeScreen = ({ route, navigation }: any) => {
     };
 
     fetchEvents();
-  }, []);
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
 
   // 1. App State: Categories the student follows
   const [userSubscriptions] = useState(['Tech', 'Social']); 
-
-  // 2. Master Event Data
-  const [events, setEvents] = useState([
-    { 
-      id: '1', title: 'AAU Tech Expo', category: 'Tech', location: '6 Kilo', 
-      date: 'May 10', time: '10:00 AM', registrationCount: 450, isRegistered: false,
-      image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4',
-      description: 'A showcase of student innovation in AI and Robotics. Join us for networking!'
-    },
-    { 
-      id: '2', title: 'Film festival', category: 'Social', location: '6 Kilo campus', 
-      date: 'May 6', time: '03:00 PM', registrationCount: 520, isRegistered: false,
-      image: 'https://images.unsplash.com/photo-1485846234645-a62644f84728',
-      description: 'Experience local student films and documentaries in an outdoor setting.'
-    },
-    { 
-      id: '3', title: 'Python Bootcamp', category: 'Tech', location: 'Digital Library', 
-      date: 'May 12', time: '09:00 AM', registrationCount: 120, isRegistered: false,
-      image: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4',
-      description: 'A beginner-friendly intensive coding session for Python enthusiasts.'
-    }
-  ]);
 
   // Modal State for Event Details
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
   // LOGIC: Toggle registration
-  const handleRegister = (id: string) => {
-    setEvents(prev => prev.map(ev => 
-      ev.id === id ? { ...ev, isRegistered: !ev.isRegistered, registrationCount: ev.isRegistered ? ev.registrationCount - 1 : ev.registrationCount + 1 } : ev
-    ));
+  const handleRegister = async (id: string) => {
+    const currentEvent = events.find(ev => ev.id === id) || selectedEvent;
+    if (!currentEvent) return;
+
+    try {
+      if (currentEvent.isRegistered) {
+        await unregisterFromEvent(id);
+      } else {
+        await registerForEvent(id);
+      }
+
+      setEvents(prev => prev.map(ev => 
+        ev.id === id ? { ...ev, isRegistered: !ev.isRegistered, registrationCount: ev.isRegistered ? ev.registrationCount - 1 : ev.registrationCount + 1 } : ev
+      ));
+      setSelectedEvent((prev: any) => prev?.id === id ? { ...prev, isRegistered: !prev.isRegistered } : prev);
+    } catch (error) {
+      console.log('Registration update failed', error);
+    }
   };
 
   // LOGIC: Filter for Subscribed Feed
@@ -76,9 +75,9 @@ const HomeScreen = ({ route, navigation }: any) => {
   [events, userSubscriptions]);
 
   // LOGIC: Sort for Popular Section
-  const popularEvents = useMemo(() => 
-    [...events].sort((a, b) => b.registrationCount - a.registrationCount), 
-  [events]);
+  const sortedPopularEvents = useMemo(() => 
+    [...popularEvents].sort((a, b) => b.registrationCount - a.registrationCount), 
+  [popularEvents]);
 
   const { width: windowWidth } = useWindowDimensions();
   const miniCardWidth = Math.min(260, windowWidth * 0.72);
@@ -106,7 +105,7 @@ const HomeScreen = ({ route, navigation }: any) => {
         <LinearGradient colors={['#3a7bd5', '#00d2ff']} style={styles.heroCard}>
           <Text style={styles.heroEmoji}>👋</Text>
           <Text style={styles.heroText}>
-            You have {events.filter(e => e.isRegistered).length} events coming up. Your AI-powered feed found new events matching your interests.
+            You have {registeredEvents.length} events coming up. Your AI-powered feed found new events matching your interests.
           </Text>
           
           <TouchableOpacity style={styles.heroBtn} onPress={() => navigation.navigate('BrowseEvents')}>
@@ -127,7 +126,7 @@ const HomeScreen = ({ route, navigation }: any) => {
         {/* --- SUBSCRIBED FEED --- */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Your Subscribed Feed</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('SubscribedEvents', { userSubscriptions })}>
+          <TouchableOpacity onPress={() => navigation.navigate('SubscribedEvents', { userSubscriptions, events })}>
             <Text style={styles.viewAll}>View All</Text>
           </TouchableOpacity>
         </View>
@@ -162,7 +161,7 @@ const HomeScreen = ({ route, navigation }: any) => {
           </TouchableOpacity>
         </View>
 
-        {popularEvents.map((item) => (
+        {sortedPopularEvents.map((item) => (
           <TouchableOpacity key={item.id} style={styles.popularCard} onPress={() => { setSelectedEvent(item); setModalVisible(true); }}>
             <Image source={{ uri: item.image }} style={styles.popularImage} />
             <View style={styles.popularInfo}>
