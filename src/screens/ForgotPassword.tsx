@@ -99,16 +99,18 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
               </TouchableOpacity>
             </View>
           ) : (
-            /* STEP 2: AMBIENT / SECURE SUCCESS STATE */
+            /* STEP 2: UPDATED SECURE / AMBIENT SUCCESS STATE */
             <View style={styles.innerForm}>
               <View style={styles.successIconBox}>
                 <Text style={styles.successIcon}>📧</Text>
               </View>
               
-              <Text style={styles.glowTitle}>Check Your Inbox</Text>
+              {/* Changed to "Request Received" */}
+              <Text style={styles.glowTitle}>Request Received</Text>
               
+              {/* Changed description to be secure and ambiguous */}
               <Text style={styles.subtitleText}>
-                If an account belongs to <Text style={styles.emailHighlight}>{email}</Text>, a password reset link has been sent. Please follow the instructions in the email to complete your modification on the web.
+                If an account is registered with this email, a password reset link has been sent to <Text style={styles.emailHighlight}>{email}</Text>. Please check your inbox and follow the instructions to update your password on the web.
               </Text>
 
               <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Login')}>
@@ -150,7 +152,7 @@ const styles = StyleSheet.create({
   errorContainer: { width: '100%', backgroundColor: 'rgba(255, 107, 107, 0.1)', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255, 107, 107, 0.3)', marginBottom: 15 },
   errorText: { color: '#ff6b6b', fontSize: 14, textAlign: 'center', fontWeight: '500' },
   successIconBox: { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(0, 210, 255, 0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  successIcon: { fontSize: 28 }
+  successIcon: { fontSize: 24 }
 });
 
 export default ForgotPasswordScreen;
