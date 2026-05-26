@@ -51,10 +51,36 @@ const CreateEventScreen = ({ navigation }: any) => {
   const [location, setLocation] = useState('');
   const [capacity, setCapacity] = useState('');
   const [category, setCategory] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [categories, setCategories] = useState<any[]>([]);
   const [image, setImage] = useState<SelectedImage | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  const parseDateInput = (value: string) => {
+    const normalized = value.includes('T') ? value : value.replace(' ', 'T');
+    const date = new Date(normalized);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+
+  const validateEventForm = () => {
+    const parsedStartDate = parseDateInput(startDate);
+    const parsedEndDate = parseDateInput(endDate);
+
+    if (title.trim().length < 3) return 'Title must be at least 3 characters';
+    if (description.trim().length < 10) return 'Description must be at least 10 characters';
+    if (location.trim().length < 3) return 'Location must be at least 3 characters';
+    if (category.trim().length < 4) return 'Category is required';
+    if (!capacity || Number(capacity) < 1) return 'Capacity must be at least 1';
+    if (!parsedStartDate) return 'Start date is required. Use a valid date like 2026-05-26 14:00';
+    if (!parsedEndDate) return 'End date is required. Use a valid date like 2026-05-26 16:00';
+    if (parsedEndDate <= parsedStartDate) return 'End date must be after start date';
+    if (!image) return 'Image is required';
+
+    return '';
+  };
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -95,24 +121,29 @@ const CreateEventScreen = ({ navigation }: any) => {
         type,
         file: (asset as any).file,
       });
+      setSubmitError('');
     }
   };
 
   const handleSubmit = async () => {
-    // Validation
-    if (!title || !description || !location || !capacity || !category || !image) {
-      Alert.alert('Error', 'Please fill all fields and pick an image.');
+    setSubmitError('');
+
+    const validationError = validateEventForm();
+    if (validationError) {
+      setSubmitError(validationError);
       return;
     }
 
+    const parsedStartDate = parseDateInput(startDate);
+    const parsedEndDate = parseDateInput(endDate);
     const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('location', location);
+    formData.append('title', title.trim());
+    formData.append('description', description.trim());
+    formData.append('location', location.trim());
     formData.append('capacity', capacity); 
-    formData.append('category', category);
-    formData.append('startDate', new Date().toISOString()); 
-    formData.append('endDate', new Date(Date.now() + 86400000).toISOString()); 
+    formData.append('category', category.trim());
+    formData.append('startDate', parsedStartDate!.toISOString()); 
+    formData.append('endDate', parsedEndDate!.toISOString()); 
 
     setLoading(true);
     try {
@@ -144,7 +175,7 @@ const CreateEventScreen = ({ navigation }: any) => {
       setSubmitted(true);
     } catch (error: any) {
       console.log('Submission Error:', error.response?.data);
-      Alert.alert('Error', error.response?.data?.message || 'Failed to create event.');
+      setSubmitError(error.response?.data?.message || error.message || 'Failed to create event.');
     } finally {
       setLoading(false);
     }
@@ -188,14 +219,34 @@ const CreateEventScreen = ({ navigation }: any) => {
           <Picker selectedValue={category} onValueChange={(item) => setCategory(item)}>
             <Picker.Item label="Select Category" value="" />
             {categories.map((cat) => (
-              <Picker.Item key={cat._id} label={cat.name} value={cat._id} />
+              <Picker.Item key={cat._id || cat.name} label={cat.name} value={cat.name} />
             ))}
           </Picker>
         </View>
+
+        <Text style={styles.label}>Start Date</Text>
+        <TextInput
+          style={styles.input}
+          value={startDate}
+          onChangeText={setStartDate}
+          placeholder="2026-05-26 14:00"
+          placeholderTextColor="#555"
+        />
+
+        <Text style={styles.label}>End Date</Text>
+        <TextInput
+          style={styles.input}
+          value={endDate}
+          onChangeText={setEndDate}
+          placeholder="2026-05-26 16:00"
+          placeholderTextColor="#555"
+        />
         
         <TouchableOpacity style={styles.imageBox} onPress={pickImage}>
           <Text style={styles.uploadText}>{image ? 'Image Selected' : 'Tap to Upload Image'}</Text>
         </TouchableOpacity>
+
+        {submitError ? <Text style={styles.errorText}>{submitError}</Text> : null}
 
         <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={loading}>
           {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.submitText}>Submit for Approval</Text>}
@@ -213,6 +264,7 @@ const styles = StyleSheet.create({
   pickerContainer: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 15 },
   imageBox: { height: 100, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderRadius: 12 },
   uploadText: { color: '#fff' },
+  errorText: { color: '#ff6b6b', textAlign: 'center', marginBottom: 15, fontWeight: 'bold' },
   submitBtn: { backgroundColor: '#00d2ff', padding: 15, alignItems: 'center', borderRadius: 10 },
   submitText: { fontWeight: 'bold', color: '#000' },
   successContainer: {
