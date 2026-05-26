@@ -52,7 +52,7 @@ const HomeScreen = ({ route, navigation }: any) => {
     { 
       id: '2', title: 'Film festival', category: 'Social', location: '6 Kilo campus', 
       date: 'May 6', time: '03:00 PM', registrationCount: 520, isRegistered: false,
-      image: 'https://images.unsplash.com/photo-1485846234645-a62644f84728',
+      image: 'https://images.unsplash.com/photo-1485446234645-a62644f84728',
       description: 'Experience local student films and documentaries in an outdoor setting.'
     },
     { 
@@ -89,32 +89,37 @@ const HomeScreen = ({ route, navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.container} 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+      >
         
         {/* --- HEADER WITH PROFILE BUTTON & ROLE SWITCH --- */}
-<View style={styles.topHeader}>
-  <View>
-    <Text style={styles.welcomeText}>Hello, Student!</Text>
-    <Text style={styles.subWelcome}>Welcome back to Smart Campus</Text>
-  </View>
-  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-    <TouchableOpacity 
-      style={[styles.profileCircle, { marginRight: 10 }]} 
-      onPress={() => navigation.navigate('Profile')}
-    >
-      <Text style={{fontSize: 20}}>👤</Text>
-    </TouchableOpacity>
-    <TouchableOpacity 
-      style={[styles.profileCircle, { backgroundColor: '#FF3B30' }]}
-      onPress={() => {
-        setUserRole?.(nextRole);
-        navigation.navigate(nextRoute, { userRole: nextRole, setUserRole });
-      }}
-    >
-      <Text style={{fontSize: 14, color: '#fff', fontWeight: 'bold' }}>{`Switch to ${nextRole}`}</Text>
-    </TouchableOpacity>
-  </View>
-</View>
+        <View style={styles.topHeader}>
+          <View>
+            <Text style={styles.welcomeText}>Hello, Student!</Text>
+            <Text style={styles.subWelcome}>Welcome back to Smart Campus</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity 
+              style={[styles.profileCircle, { marginRight: 10 }]} 
+              onPress={() => navigation.navigate('Profile')}
+            >
+              <Text style={{fontSize: 20}}>👤</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.profileCircle, { backgroundColor: '#FF3B30' }]}
+              onPress={() => {
+                setUserRole?.(nextRole);
+                navigation.navigate(nextRoute, { userRole: nextRole, setUserRole });
+              }}
+            >
+              <Text style={{fontSize: 14, color: '#fff', fontWeight: 'bold' }}>{`Switch to ${nextRole}`}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* --- HERO SECTION --- */}
         <LinearGradient colors={['#3a7bd5', '#00d2ff']} style={styles.heroCard}>
           <Text style={styles.heroEmoji}>👋</Text>
@@ -186,7 +191,6 @@ const HomeScreen = ({ route, navigation }: any) => {
           </TouchableOpacity>
         ))}
 
-        <View style={{height: 40}} />
       </ScrollView>
 
       {/* --- EVENT DETAILS MODAL --- */}
@@ -223,11 +227,11 @@ const HomeScreen = ({ route, navigation }: any) => {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#000b18' },
   container: { flex: 1 },
+  scrollContent: { paddingBottom: 40 }, // Extra bottom bounce area
   topHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginTop: 20 },
   welcomeText: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
   subWelcome: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 4 },
   profileCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center' },
-  // Hero Styles
   heroCard: { margin: 20, borderRadius: 30, padding: 25 },
   heroEmoji: { fontSize: 30, marginBottom: 10 },
   heroText: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 20, lineHeight: 22 },
@@ -236,11 +240,9 @@ const styles = StyleSheet.create({
   heroBtnText: { color: '#000b18', fontWeight: 'bold' },
   aiBtn: { borderRadius: 15, overflow: 'hidden' },
   aiGradient: { padding: 15, alignItems: 'center' },
-  // Section Headers
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginTop: 25, marginBottom: 15 },
   sectionTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
   viewAll: { color: '#00d2ff', fontWeight: 'bold' },
-  // Subscribed Feed Styles
   miniCard: { width: 220, backgroundColor: '#0c1a2b', borderRadius: 20, padding: 12, marginRight: 15 },
   miniImage: { width: '100%', height: 110, borderRadius: 15, marginBottom: 10 },
   miniBadge: { backgroundColor: 'rgba(0,210,255,0.1)', alignSelf: 'flex-start', padding: 4, borderRadius: 6 },
@@ -249,14 +251,12 @@ const styles = StyleSheet.create({
   miniMeta: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 },
   emptyFeed: { padding: 40, alignItems: 'center' },
   emptyText: { color: 'rgba(255,255,255,0.5)', textAlign: 'center' },
-  // Popular Styles
   popularCard: { flexDirection: 'row', backgroundColor: '#0c1a2b', marginHorizontal: 20, marginBottom: 15, borderRadius: 20, padding: 12, alignItems: 'center' },
   popularImage: { width: 80, height: 80, borderRadius: 15 },
   popularInfo: { marginLeft: 15, flex: 1 },
   popularCategory: { color: '#00d2ff', fontSize: 10, fontWeight: 'bold' },
   popularTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginTop: 2 },
   popularMeta: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 5 },
-  // Modal Styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', padding: 20 },
   modalContent: { backgroundColor: '#0c1a2b', borderRadius: 30, padding: 25, borderWidth: 1, borderColor: '#00d2ff' },
   modalTitle: { color: '#fff', fontSize: 24, fontWeight: 'bold', marginBottom: 20 },

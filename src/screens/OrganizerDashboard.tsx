@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  StyleSheet, View, Text, FlatList, TouchableOpacity, 
+  StyleSheet, View, Text, TouchableOpacity, 
   SafeAreaView, Image, ScrollView, useWindowDimensions, Modal 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,7 +27,11 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <ScrollView 
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         
         {/* Header */}
         <View style={styles.header}>
@@ -61,89 +65,86 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
 
         <Text style={styles.sectionTitle}>Your Events</Text>
 
-        <FlatList
-          data={MY_CREATED_EVENTS}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.eventCard}>
-              <Image source={{ uri: item.image }} style={[styles.eventImg, { width: imageSize, height: imageSize }]} />
-              <View style={styles.eventInfo}>
-                <Text style={styles.eventTitle}>{item.title}</Text>
-                <Text style={styles.eventTime}>{item.time}</Text>
-                
-                {/* Registration Count */}
-                <View style={styles.regBadge}>
-                  <Text style={styles.regText}>👥 {item.registrations} Joined</Text>
-                </View>
-
-                {/* Status Indicator */}
-                <View style={[styles.statusTag, { backgroundColor: item.status === 'Approved' ? 'rgba(40, 167, 69, 0.2)' : 'rgba(255, 193, 7, 0.2)' }]}>
-                  <Text style={[styles.statusText, { color: item.status === 'Approved' ? '#28a745' : '#ffc107' }]}>
-                    ● {item.status}
-                  </Text>
-                </View>
-              </View>
+        {/* Render custom arrays iteratively directly inside the layout container */}
+        {MY_CREATED_EVENTS.map((item) => (
+          <View key={item.id} style={styles.eventCard}>
+            <Image source={{ uri: item.image }} style={[styles.eventImg, { width: imageSize, height: imageSize }]} />
+            <View style={styles.eventInfo}>
+              <Text style={styles.eventTitle}>{item.title}</Text>
+              <Text style={styles.eventTime}>{item.time}</Text>
               
-              <TouchableOpacity 
-                style={styles.reportBtn} 
-                onPress={() => setSelectedReport(item)}
-              >
-                <Text style={styles.reportBtnText}>📊 View Analytics</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={styles.editBtn} 
-                onPress={() => navigation.navigate('CreateEvent', { event: item })}
-              >
-                <Text style={styles.editText}>Edit</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        />
-
-        <Modal visible={!!selectedReport} transparent animationType="slide">
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>{selectedReport?.title} Analysis</Text>
-              <View style={styles.statBoxModal}>
-                <Text style={styles.statLabel}>Total Registrations</Text>
-                <Text style={styles.statValue}>{selectedReport?.registrations}</Text>
+              {/* Registration Count */}
+              <View style={styles.regBadge}>
+                <Text style={styles.regText}>👥 {item.registrations} Joined</Text>
               </View>
 
-              <Text style={styles.subTitle}>Engagement Status</Text>
-              <Text style={styles.descText}>
-                {selectedReport?.registrations > 100
-                  ? 'High engagement: Your event is trending!'
-                  : 'Moderate engagement: Consider sharing the event link on social media to boost sign-ups.'}
-              </Text>
-
-              <TouchableOpacity style={styles.closeBtn} onPress={() => setSelectedReport(null)}>
-                <Text style={styles.closeBtnText}>Close</Text>
-              </TouchableOpacity>
+              {/* Status Indicator */}
+              <View style={[styles.statusTag, { backgroundColor: item.status === 'Approved' ? 'rgba(40, 167, 69, 0.2)' : 'rgba(255, 193, 7, 0.2)' }]}>
+                <Text style={[styles.statusText, { color: item.status === 'Approved' ? '#28a745' : '#ffc107' }]}>
+                  ● {item.status}
+                </Text>
+              </View>
             </View>
+            
+            <TouchableOpacity 
+              style={styles.reportBtn} 
+              onPress={() => setSelectedReport(item)}
+            >
+              <Text style={styles.reportBtnText}>📊 Analytics</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.editBtn} 
+              onPress={() => navigation.navigate('CreateEvent', { event: item })}
+            >
+              <Text style={styles.editText}>Edit</Text>
+            </TouchableOpacity>
           </View>
-        </Modal>
-      </View>
+        ))}
+
+      </ScrollView>
+
+      {/* --- ANALYSIS REPORT STATE MODAL --- */}
+      <Modal visible={!!selectedReport} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{selectedReport?.title} Analysis</Text>
+            <View style={styles.statBoxModal}>
+              <Text style={styles.statLabel}>Total Registrations</Text>
+              <Text style={styles.statValue}>{selectedReport?.registrations}</Text>
+            </View>
+
+            <Text style={styles.subTitle}>Engagement Status</Text>
+            <Text style={styles.descText}>
+              {selectedReport?.registrations > 100
+                ? 'High engagement: Your event is trending!'
+                : 'Moderate engagement: Consider sharing the event link on social media to boost sign-ups.'}
+            </Text>
+
+            <TouchableOpacity style={styles.closeBtn} onPress={() => setSelectedReport(null)}>
+              <Text style={styles.closeBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#000b18' },
-  container: { flex: 1, padding: '5%' },
+  container: { flex: 1, paddingHorizontal: '5%' },
+  scrollContent: { paddingVertical: 15, paddingBottom: 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 25 },
   headerTitle: { color: '#fff', fontSize: 26, fontWeight: 'bold' },
   headerSub: { color: 'rgba(255,255,255,0.5)', fontSize: 13 },
-
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25, flexWrap: 'wrap' },
   statBox: { flexBasis: '48%', backgroundColor: '#0c1a2b', padding: 20, borderRadius: 20, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', marginBottom: 10 },
   statNum: { color: '#00d2ff', fontSize: 24, fontWeight: 'bold' },
   statLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 4 },
-
   createBtn: { height: 55, borderRadius: 15, overflow: 'hidden', marginBottom: 30 },
   btnGradient: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   createBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-
   sectionTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 15 },
   eventCard: { flexDirection: 'row', backgroundColor: '#0c1a2b', padding: 15, borderRadius: 20, marginBottom: 15, alignItems: 'center', width: '100%' },
   eventImg: { width: 70, height: 70, borderRadius: 12 },
@@ -155,7 +156,7 @@ const styles = StyleSheet.create({
   statusTag: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 5, marginTop: 8 },
   statusText: { fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' },
   reportBtn: { padding: 10, marginRight: 10, backgroundColor: '#14233d', borderRadius: 12, borderWidth: 1, borderColor: '#00d2ff' },
-  reportBtnText: { color: '#00d2ff', fontWeight: 'bold' },
+  reportBtnText: { color: '#00d2ff', fontWeight: 'bold', fontSize: 12 },
   editBtn: { padding: 10 },
   editText: { color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
