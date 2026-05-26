@@ -9,7 +9,10 @@ import {
   ScrollView 
 } from 'react-native';
 
-const ProfileScreen = ({ navigation }: any) => {
+const ProfileScreen = ({ route, navigation }: any) => {
+  // Check if an ID was passed in the navigation route (only students pass this)
+  const isStudent = !!route?.params?.id;
+
   const [name, setName] = useState('Abebe Bikila');
   const [studentId, setStudentId] = useState('UGR/1234/15');
   const [email, setEmail] = useState('abebe.b@aau.edu.et');
@@ -60,14 +63,19 @@ const ProfileScreen = ({ navigation }: any) => {
               placeholderTextColor="rgba(255,255,255,0.3)"
             />
 
-            <Text style={styles.label}>Student ID Number</Text>
-            <TextInput 
-              style={styles.input} 
-              value={studentId} 
-              onChangeText={setStudentId}
-              placeholder="Enter your student ID"
-              placeholderTextColor="rgba(255,255,255,0.3)"
-            />
+            {/* CONDITIONALLY RENDER STUDENT ID FIELD */}
+            {isStudent && (
+              <>
+                <Text style={styles.label}>Student ID Number</Text>
+                <TextInput 
+                  style={styles.input} 
+                  value={studentId} 
+                  onChangeText={setStudentId}
+                  placeholder="Enter your student ID"
+                  placeholderTextColor="rgba(255,255,255,0.3)"
+                />
+              </>
+            )}
 
             <Text style={styles.label}>University Email</Text>
             <TextInput 
