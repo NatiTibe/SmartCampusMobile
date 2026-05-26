@@ -30,11 +30,10 @@ export const login = async (credentials) => {
 };
 
 /**
- * Sends a request to the backend to generate a 6-digit code instead of a link
+ * Calls backend password recovery api setup to dispatch 6-digit codes
  */
 export const forgotPassword = async (email) => {
   try {
-    // Corrected route context to match backend architecture patterns securely
     const response = await apiClient.post('/auth/forgot-password', { email });
 
     if (response && response.data) {
@@ -44,6 +43,21 @@ export const forgotPassword = async (email) => {
     throw new Error('No data received from server');
   } catch (error) {
     const errorMessage = error.response?.data?.message || error.message || 'Password reset request failed';
+    console.error('Forgot Password Failed:', errorMessage);
+    throw new Error(errorMessage);
+  }
+};
+
+/**
+ * Alternative wrapper for password reset requests targeting the same route
+ */
+export const requestPasswordReset = async (email) => {
+  try {
+    const response = await apiClient.post('/auth/forgot-password', { email });
+    return response.data;
+  } catch (error) {
+    const err = error;
+    const errorMessage = err?.response?.data?.message || err?.message || 'Reset request failed';
     console.error('Forgot Password Failed:', errorMessage);
     throw new Error(errorMessage);
   }
