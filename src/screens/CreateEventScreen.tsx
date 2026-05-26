@@ -54,6 +54,7 @@ const CreateEventScreen = ({ navigation }: any) => {
   const [categories, setCategories] = useState<any[]>([]);
   const [image, setImage] = useState<SelectedImage | null>(null);
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -140,8 +141,7 @@ const CreateEventScreen = ({ navigation }: any) => {
         // Axios automatically handles the headers for FormData on native.
         await api.post('/organizer/create', formData);
       }
-      Alert.alert('Success', 'Event submitted for approval!');
-      navigation.navigate('OrganizerDashboard');
+      setSubmitted(true);
     } catch (error: any) {
       console.log('Submission Error:', error.response?.data);
       Alert.alert('Error', error.response?.data?.message || 'Failed to create event.');
@@ -149,6 +149,24 @@ const CreateEventScreen = ({ navigation }: any) => {
       setLoading(false);
     }
   };
+
+  if (submitted) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.successContainer}>
+          <Text style={styles.successTitle}>Successfully submitted</Text>
+          <Text style={styles.successMessage}>Your event is waiting for admin approval.</Text>
+
+          <TouchableOpacity
+            style={styles.submitBtn}
+            onPress={() => navigation.navigate('OrganizerDashboard')}
+          >
+            <Text style={styles.submitText}>Return Home</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -196,7 +214,25 @@ const styles = StyleSheet.create({
   imageBox: { height: 100, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderRadius: 12 },
   uploadText: { color: '#fff' },
   submitBtn: { backgroundColor: '#00d2ff', padding: 15, alignItems: 'center', borderRadius: 10 },
-  submitText: { fontWeight: 'bold', color: '#000' }
+  submitText: { fontWeight: 'bold', color: '#000' },
+  successContainer: {
+    flex: 1,
+    padding: 24,
+    justifyContent: 'center',
+  },
+  successTitle: {
+    color: '#fff',
+    fontSize: 26,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  successMessage: {
+    color: '#aaa',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 28,
+  },
 });
 
 export default CreateEventScreen;
