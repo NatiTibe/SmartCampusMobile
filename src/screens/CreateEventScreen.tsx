@@ -1,29 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, View, Text, TextInput, TouchableOpacity, 
-  SafeAreaView, ScrollView, Alert, Image 
+  SafeAreaView, ScrollView, Alert, Image, Platform 
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../services/apiService';
 
 const CreateEventScreen = ({ navigation, route }: any) => {
-  // Check if we are editing an existing event
   const editingEvent = route.params?.event;
 
   const [title, setTitle] = useState(editingEvent?.title || '');
-  const [desc, setDesc] = useState(editingEvent?.description || '');
+  const [description, setDescription] = useState(editingEvent?.description || '');
   const [location, setLocation] = useState(editingEvent?.location || '');
   const [image, setImage] = useState<string | null>(editingEvent?.image || null);
   
-  // Date and Time State
   const [date, setDate] = useState(editingEvent?.date ? new Date(editingEvent.date) : new Date());
   const [showPicker, setShowPicker] = useState<'date' | 'time' | null>(null);
 
   useEffect(() => {
     if (editingEvent) {
       setTitle(editingEvent.title || '');
-      setDesc(editingEvent.description || '');
+      setDescription(editingEvent.description || '');
       setLocation(editingEvent.location || '');
       setImage(editingEvent.image || null);
       if (editingEvent.date) {
@@ -51,36 +49,65 @@ const CreateEventScreen = ({ navigation, route }: any) => {
   };
 
   const handleSubmit = async () => {
-    if (!title || !desc || !location) {
+    if (!title || !description || !location) {
       Alert.alert('Missing Fields', 'Please fill out the title, location, and description.');
       return;
     }
 
+    if (!image && !editingEvent) {
+      Alert.alert('Image Required', 'Please upload an event cover image.');
+      return;
+    }
+
     try {
-      // Format your payload to match what your backend expects
-      const payload = {
-        title,
-        description: desc,
-        location,
-        date: date.toISOString(), // Send the full ISO string
-        image, 
-        status: 'Pending' // Explicitly set it to pending
+      // 1. Initialize FormData payload required by your backend Multer setup
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('location', location);
+      formData.append('date', date.toISOString()); 
+
+      // 2. Format and append image conditionally for Web vs. Mobile environments
+      if (image && !image.startsWith('http')) {
+        if (Platform.OS === 'web') {
+          const response = await fetch(image);
+          const blob = await response.blob();
+          formData.append('image', blob, 'event-cover.jpg');
+        } else {
+          const filename = image.split('/').pop() || 'event-cover.jpg';
+          const match = /\.(\w+)$/.exec(filename);
+          const type = match ? `image/${match[1]}` : `image/jpeg`;
+          formData.append('image', {
+            uri: image,
+            name: filename,
+            type: type,
+          } as any);
+        }
+      }
+
+      // 3. Configure multipart/form-data header content type
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       };
 
       if (editingEvent) {
-        await api.put(`/event/update/${editingEvent.id}`, payload); 
+        // Calls: PUT /organizer/update/:id
+        await api.put(`/organizer/update/${editingEvent.id}`, formData, config); 
         Alert.alert('Success', 'Event updated successfully!');
       } else {
-        await api.post('/event/create', payload); 
+        // Calls: POST /organizer/create
+        await api.post('/organizer/create', formData, config); 
         Alert.alert('Success', 'Event submitted for approval!');
       }
 
-      // Navigate back only AFTER the api call succeeds
       navigation.goBack();
       
-    } catch (error) {
+    } catch (error: any) {
       console.log('Failed to submit event:', error);
-      Alert.alert('Error', 'There was a problem submitting your event. Please try again.');
+      const serverMessage = error.response?.data?.message || 'There was a problem submitting your event.';
+      Alert.alert('Submission Failed', serverMessage);
     }
   };
 
@@ -93,7 +120,6 @@ const CreateEventScreen = ({ navigation, route }: any) => {
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Image Upload Area */}
           <TouchableOpacity style={styles.imageBox} onPress={pickImage}>
             {image ? (
               <Image source={{ uri: image }} style={styles.fullImg} />
@@ -105,7 +131,6 @@ const CreateEventScreen = ({ navigation, route }: any) => {
           <Text style={styles.label}>Title</Text>
           <TextInput style={styles.input} value={title} onChangeText={setTitle} />
 
-          {/* Date & Time Pickers */}
           <View style={styles.row}>
             <TouchableOpacity style={[styles.input, { flex: 1, marginRight: 10 }]} onPress={() => setShowPicker('date')}>
               <Text style={{color: '#fff'}}>{date.toDateString()}</Text>
@@ -128,7 +153,7 @@ const CreateEventScreen = ({ navigation, route }: any) => {
           <TextInput style={styles.input} value={location} onChangeText={setLocation} />
 
           <Text style={styles.label}>Description</Text>
-          <TextInput style={[styles.input, { height: 100 }]} multiline value={desc} onChangeText={setDesc} />
+          <TextInput style={[styles.input, { height: 100 }]} multiline value={description} onChangeText={setDescription} />
 
           <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
             <Text style={styles.submitText}>{editingEvent ? 'Save Changes' : 'Submit for Approval'}</Text>

@@ -4,7 +4,7 @@ import {
   SafeAreaView, Image, ScrollView, useWindowDimensions, Modal 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect } from '@react-navigation/native'; // IMPORT ADDED
+import { useFocusEffect } from '@react-navigation/native';
 import api from '../services/apiService';
 
 const OrganizerDashboard = ({ route, navigation }: any) => {
@@ -15,12 +15,12 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
   const [events, setEvents] = useState<any[]>([]);
   const [selectedReport, setSelectedReport] = useState<any>(null);
 
-  // CHANGED FROM useEffect TO useFocusEffect
   useFocusEffect(
     useCallback(() => {
       const fetchOrganizerEvents = async () => {
         try {
-          const response = await api.get('/event/organizer-events');
+          // CHANGED: Matches backend router path in organizerRoutes.ts
+          const response = await api.get('/organizer/events');
           const backendEvents = response.data?.events || response.data || [];
           setEvents(backendEvents.map((ev: any) => ({
             id: ev._id || ev.id,
