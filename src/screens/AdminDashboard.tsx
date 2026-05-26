@@ -1,9 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { 
   StyleSheet, View, Text, TouchableOpacity, 
   SafeAreaView, Image, Modal, ScrollView, Alert, useWindowDimensions 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native'; // IMPORT ADDED
 import api from '../services/apiService';
 
 const AdminDashboard = ({ route, navigation }: any) => {
@@ -11,33 +12,36 @@ const AdminDashboard = ({ route, navigation }: any) => {
   const eventImageSize = width > 420 ? 60 : 50;
   const reportMaxWidth = Math.min(width - 40, 620);
 
-  // Dataset initialized empty (No demo events displayed)
   const [events, setEvents] = useState<any[]>([]);
 
-  useEffect(() => {
-    const fetchAdminEvents = async () => {
-      try {
-        const response = await api.get('/event/all-events');
-        const backendEvents = response.data?.events || response.data || [];
-        setEvents(backendEvents.map((ev: any) => ({
-          id: ev._id || ev.id,
-          title: ev.title || '',
-          organizer: ev.organizer?.name || ev.organizer || 'Campus Club',
-          category: ev.category?.name || ev.category || 'General',
-          location: ev.location || 'Campus',
-          date: ev.startDate ? new Date(ev.startDate).toDateString() : ev.date || '',
-          time: ev.startTime || ev.time || '',
-          status: ev.status || 'Pending',
-          registrations: ev.registrationCount || ev.registeredCount || 0,
-          image: ev.imageUrl || ev.image || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4',
-          description: ev.description || '',
-        })));
-      } catch (error) {
-        console.log('Failed to fetch admin events', error);
-      }
-    };
-    fetchAdminEvents();
-  }, []);
+  // CHANGED FROM useEffect TO useFocusEffect
+  useFocusEffect(
+    useCallback(() => {
+      const fetchAdminEvents = async () => {
+        try {
+          const response = await api.get('/event/all-events');
+          const backendEvents = response.data?.events || response.data || [];
+          setEvents(backendEvents.map((ev: any) => ({
+            id: ev._id || ev.id,
+            title: ev.title || '',
+            organizer: ev.organizer?.name || ev.organizer || 'Campus Club',
+            category: ev.category?.name || ev.category || 'General',
+            location: ev.location || 'Campus',
+            date: ev.startDate ? new Date(ev.startDate).toDateString() : ev.date || '',
+            time: ev.startTime || ev.time || '',
+            status: ev.status || 'Pending',
+            registrations: ev.registrationCount || ev.registeredCount || 0,
+            image: ev.imageUrl || ev.image || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4',
+            description: ev.description || '',
+          })));
+        } catch (error) {
+          console.log('Failed to fetch admin events', error);
+        }
+      };
+      
+      fetchAdminEvents();
+    }, [])
+  );
 
   const [currentFilter, setCurrentFilter] = useState<'Pending' | 'Approved' | 'Rejected'>('Pending');
   const [selectedReview, setSelectedReview] = useState<any>(null);
@@ -81,8 +85,6 @@ const AdminDashboard = ({ route, navigation }: any) => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        
-        {/* --- HEADER WITH PROFILE BUTTON (NO ID PASSED) --- */}
         <View style={styles.header}>
           <View>
             <Text style={styles.headerTitle}>Admin Panel</Text>
@@ -95,14 +97,13 @@ const AdminDashboard = ({ route, navigation }: any) => {
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.profileCircle} 
-              onPress={() => navigation.navigate('Profile')} // Cleared ID params
+              onPress={() => navigation.navigate('Profile')}
             >
               <Text style={{fontSize: 20}}>👤</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* --- FILTER CONTROL BAR --- */}
         <View style={styles.filterBar}>
           {(['Pending', 'Approved', 'Rejected'] as const).map((status) => (
             <TouchableOpacity 
@@ -117,7 +118,6 @@ const AdminDashboard = ({ route, navigation }: any) => {
           ))}
         </View>
 
-        {/* --- DYNAMIC EVENT LIST ROWS (MAPPED MOCK-FREE) --- */}
         {filteredEvents.length > 0 ? (
           filteredEvents.map((item) => (
             <TouchableOpacity 
@@ -145,7 +145,6 @@ const AdminDashboard = ({ route, navigation }: any) => {
 
       </ScrollView>
 
-      {/* --- EVENT ACTION MODAL --- */}
       <Modal visible={!!selectedReview} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -188,7 +187,6 @@ const AdminDashboard = ({ route, navigation }: any) => {
         </View>
       </Modal>
 
-      {/* --- ATTENDANCE PARTICIPATION REPORT MODAL --- */}
       <Modal visible={showReport} transparent animationType="fade">
         <View style={styles.modalOverlayCentered}>
           <View style={[styles.reportCardContainer, { width: reportMaxWidth }] }>
@@ -232,7 +230,6 @@ const AdminDashboard = ({ route, navigation }: any) => {
           </View>
         </View>
       </Modal>
-
     </SafeAreaView>
   );
 };

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   StyleSheet, View, Text, TouchableOpacity, 
   SafeAreaView, Image, ScrollView, useWindowDimensions, Modal 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native'; // IMPORT ADDED
 import api from '../services/apiService';
 
 const OrganizerDashboard = ({ route, navigation }: any) => {
@@ -11,32 +12,34 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
   const statBoxBasis = width > 640 ? '48%' : '100%';
   const imageSize = width > 420 ? 70 : 60;
   
-  // Real Organizer Dataset initialized empty (No demo events)
   const [events, setEvents] = useState<any[]>([]);
   const [selectedReport, setSelectedReport] = useState<any>(null);
 
-  useEffect(() => {
-    const fetchOrganizerEvents = async () => {
-      try {
-        const response = await api.get('/event/organizer-events');
-        const backendEvents = response.data?.events || response.data || [];
-        setEvents(backendEvents.map((ev: any) => ({
-          id: ev._id || ev.id,
-          title: ev.title || '',
-          status: ev.status || 'Pending',
-          registrations: ev.registrationCount || ev.registeredCount || 0,
-          time: ev.startDate ? `${new Date(ev.startDate).toDateString()} ${ev.startTime || ''}` : ev.time || '',
-          image: ev.imageUrl || ev.image || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4',
-          description: ev.description || ''
-        })));
-      } catch (error) {
-        console.log('Failed to fetch organizer events', error);
-      }
-    };
-    fetchOrganizerEvents();
-  }, []);
+  // CHANGED FROM useEffect TO useFocusEffect
+  useFocusEffect(
+    useCallback(() => {
+      const fetchOrganizerEvents = async () => {
+        try {
+          const response = await api.get('/event/organizer-events');
+          const backendEvents = response.data?.events || response.data || [];
+          setEvents(backendEvents.map((ev: any) => ({
+            id: ev._id || ev.id,
+            title: ev.title || '',
+            status: ev.status || 'Pending',
+            registrations: ev.registrationCount || ev.registeredCount || 0,
+            time: ev.startDate ? `${new Date(ev.startDate).toDateString()} ${ev.startTime || ''}` : ev.time || '',
+            image: ev.imageUrl || ev.image || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4',
+            description: ev.description || ''
+          })));
+        } catch (error) {
+          console.log('Failed to fetch organizer events', error);
+        }
+      };
+      
+      fetchOrganizerEvents();
+    }, [])
+  );
 
-  // Compute metrics dynamically based on active state updates
   const totalReach = events.reduce((acc, ev) => acc + (ev.registrations || 0), 0);
 
   return (
@@ -46,8 +49,6 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        
-        {/* Header with Profile Button (NO ID PASSED) */}
         <View style={styles.header}>
           <View>
             <Text style={styles.headerTitle}>Organizer Panel</Text>
@@ -55,13 +56,12 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
           </View>
           <TouchableOpacity 
             style={styles.profileCircle} 
-            onPress={() => navigation.navigate('Profile')} // Cleared ID params
+            onPress={() => navigation.navigate('Profile')}
           >
             <Text style={{fontSize: 20}}>👤</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Quick Stats Summary */}
         <View style={styles.statsRow}>
           <View style={[styles.statBox, { flexBasis: statBoxBasis }] }>
             <Text style={styles.statNum}>{totalReach}</Text>
@@ -73,7 +73,6 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
           </View>
         </View>
 
-        {/* Action Button */}
         <TouchableOpacity 
           style={styles.createBtn} 
           onPress={() => navigation.navigate('CreateEvent')}
@@ -85,7 +84,6 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
 
         <Text style={styles.sectionTitle}>Your Events</Text>
 
-        {/* Dynamic Map loop resolves structural scrolling hang-ups */}
         {events.length > 0 ? (
           events.map((item) => (
             <View key={item.id} style={styles.eventCard}>
@@ -94,14 +92,12 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
                 <Text style={styles.eventTitle}>{item.title}</Text>
                 <Text style={styles.eventTime}>{item.time}</Text>
                 
-                {/* Registration Count */}
                 <View style={styles.regBadge}>
                   <Text style={styles.regText}>👥 {item.registrations} Joined</Text>
                 </View>
 
-                {/* Status Indicator */}
-                <View style={[styles.statusTag, { backgroundColor: item.status === 'Approved' ? 'rgba(40, 167, 69, 0.2)' : 'rgba(255, 193, 7, 0.2)' }]}>
-                  <Text style={[styles.statusText, { color: item.status === 'Approved' ? '#28a745' : '#ffc107' }]}>
+                <View style={[styles.statusTag, { backgroundColor: item.status === 'Approved' ? 'rgba(40, 167, 69, 0.2)' : item.status === 'Rejected' ? 'rgba(255, 59, 48, 0.2)' : 'rgba(255, 193, 7, 0.2)' }]}>
+                  <Text style={[styles.statusText, { color: item.status === 'Approved' ? '#28a745' : item.status === 'Rejected' ? '#FF3B30' : '#ffc107' }]}>
                     ● {item.status}
                   </Text>
                 </View>
@@ -127,7 +123,6 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
             <Text style={{ color: 'rgba(255,255,255,0.4)' }}>No posted events found.</Text>
           </View>
         )}
-
       </ScrollView>
 
       <Modal visible={!!selectedReport} transparent animationType="slide">
