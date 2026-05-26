@@ -17,16 +17,14 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
   const handleSendEmail = async () => {
     setError(null);
 
-    // 1. Check if the field is empty
     if (!email) {
       setError('Please enter your email address.');
       return;
     }
 
-    // 2. Frontend Format Validation (Checks for missing @, missing .com, spaces, etc.)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      setError('Please enter a valid email address format (e.g., name@example.com).');
+      setError('Please enter a valid email address format.');
       return;
     }
 
@@ -35,7 +33,6 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
       await forgotPassword(email.trim());
       setIsSent(true);
     } catch (err: any) {
-      // This automatically catches and displays any error message sent by the backend
       setError(err.message || 'Failed to send reset link. Please try again.');
     } finally {
       setLoading(false);
@@ -77,7 +74,6 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
                 />
               </View>
 
-              {/* The frontend error message display box */}
               {error ? (
                 <View style={styles.errorContainer}>
                   <Text style={styles.errorText}>{error}</Text>
@@ -103,16 +99,16 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
               </TouchableOpacity>
             </View>
           ) : (
-            /* STEP 2: SUCCESS CONFIRMATION STATE */
+            /* STEP 2: AMBIENT / SECURE SUCCESS STATE */
             <View style={styles.innerForm}>
               <View style={styles.successIconBox}>
-                <Text style={styles.successIcon}>🎉</Text>
+                <Text style={styles.successIcon}>📧</Text>
               </View>
               
-              <Text style={styles.glowTitle}>Successfully Sent!</Text>
+              <Text style={styles.glowTitle}>Check Your Inbox</Text>
               
               <Text style={styles.subtitleText}>
-                A password reset link has been successfully sent to <Text style={styles.emailHighlight}>{email}</Text>. Please check your email inbox to safely complete your password modification on the web.
+                If an account belongs to <Text style={styles.emailHighlight}>{email}</Text>, a password reset link has been sent. Please follow the instructions in the email to complete your modification on the web.
               </Text>
 
               <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Login')}>
