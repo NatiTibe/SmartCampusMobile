@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, View, Text, TextInput, TouchableOpacity, 
-  ScrollView, Alert, SafeAreaView, ActivityIndicator, Platform
+  ScrollView, Alert, SafeAreaView, ActivityIndicator, Platform, Modal
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker'; 
-import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../services/apiService';
 
 type SelectedImage = {
@@ -60,6 +59,8 @@ const CreateEventScreen = ({ navigation }: any) => {
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [activeDatePicker, setActiveDatePicker] = useState<'start' | 'end' | null>(null);
+  const [draftDate, setDraftDate] = useState(new Date());
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   const parseDateInput = (value: string) => {
     const normalized = value.includes('T') ? value : value.replace(' ', 'T');
@@ -84,49 +85,163 @@ const CreateEventScreen = ({ navigation }: any) => {
     });
   };
 
+  const openDatePicker = (pickerKey: 'start' | 'end', value: string) => {
+    const selectedDate = parseDateInput(value) || new Date();
+    setDraftDate(selectedDate);
+    setCalendarMonth(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+    setActiveDatePicker(pickerKey);
+  };
+
+  const applyDatePicker = () => {
+    const nextValue = toDateTimeLocalValue(draftDate);
+    if (activeDatePicker === 'start') {
+      setStartDate(nextValue);
+    }
+    if (activeDatePicker === 'end') {
+      setEndDate(nextValue);
+    }
+    setActiveDatePicker(null);
+  };
+
+  const changeCalendarMonth = (amount: number) => {
+    setCalendarMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + amount, 1));
+  };
+
+  const selectCalendarDay = (day: number) => {
+    setDraftDate(prev => new Date(
+      calendarMonth.getFullYear(),
+      calendarMonth.getMonth(),
+      day,
+      prev.getHours(),
+      prev.getMinutes(),
+    ));
+  };
+
+  const adjustDraftTime = (field: 'hour' | 'minute', amount: number) => {
+    setDraftDate(prev => {
+      const next = new Date(prev);
+      if (field === 'hour') {
+        next.setHours(next.getHours() + amount);
+      } else {
+        next.setMinutes(next.getMinutes() + amount);
+      }
+      return next;
+    });
+  };
+
+  const getCalendarDays = () => {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const days: Array<number | null> = Array(firstDay).fill(null);
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      days.push(day);
+    }
+
+    return days;
+  };
+
   const renderDateField = (
     label: string,
     value: string,
-    onChange: (value: string) => void,
     pickerKey: 'start' | 'end',
   ) => {
-    const selectedDate = parseDateInput(value) || new Date();
-
     return (
       <>
         <Text style={styles.label}>{label}</Text>
-        {Platform.OS === 'web' ? (
-          <View style={styles.webDateInputWrapper}>
-            {React.createElement('input', {
-              type: 'datetime-local',
-              value,
-              onChange: (event: any) => onChange(event.target.value),
-              style: styles.webDateInput,
-            })}
-          </View>
-        ) : (
-          <>
-            <TouchableOpacity style={styles.dateButton} onPress={() => setActiveDatePicker(pickerKey)}>
-              <Text style={[styles.dateButtonText, !value && styles.datePlaceholder]}>
-                {formatDateForDisplay(value) || 'Select date and time'}
-              </Text>
-            </TouchableOpacity>
-            {activeDatePicker === pickerKey && (
-              <DateTimePicker
-                value={selectedDate}
-                mode="datetime"
-                display="default"
-                onChange={(_, selected) => {
-                  setActiveDatePicker(null);
-                  if (selected) {
-                    onChange(toDateTimeLocalValue(selected));
-                  }
-                }}
-              />
-            )}
-          </>
-        )}
+        <TouchableOpacity style={styles.dateButton} onPress={() => openDatePicker(pickerKey, value)}>
+          <Text style={[styles.dateButtonText, !value && styles.datePlaceholder]}>
+            {formatDateForDisplay(value) || 'Select date and time'}
+          </Text>
+        </TouchableOpacity>
       </>
+    );
+  };
+
+  const renderCalendarModal = () => {
+    const monthLabel = calendarMonth.toLocaleString([], { month: 'long', year: 'numeric' });
+    const selectedDay = draftDate.getFullYear() === calendarMonth.getFullYear()
+      && draftDate.getMonth() === calendarMonth.getMonth()
+      ? draftDate.getDate()
+      : null;
+
+    return (
+      <Modal visible={!!activeDatePicker} transparent animationType="fade" onRequestClose={() => setActiveDatePicker(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.calendarCard}>
+            <View style={styles.calendarHeader}>
+              <TouchableOpacity style={styles.monthButton} onPress={() => changeCalendarMonth(-1)}>
+                <Text style={styles.monthButtonText}>‹</Text>
+              </TouchableOpacity>
+              <Text style={styles.calendarTitle}>{monthLabel}</Text>
+              <TouchableOpacity style={styles.monthButton} onPress={() => changeCalendarMonth(1)}>
+                <Text style={styles.monthButtonText}>›</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.weekRow}>
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <Text key={day} style={styles.weekDay}>{day}</Text>
+              ))}
+            </View>
+
+            <View style={styles.daysGrid}>
+              {getCalendarDays().map((day, index) => (
+                <TouchableOpacity
+                  key={`${day || 'blank'}-${index}`}
+                  style={[
+                    styles.dayCell,
+                    day === selectedDay && styles.dayCellSelected,
+                    !day && styles.dayCellBlank,
+                  ]}
+                  disabled={!day}
+                  onPress={() => day && selectCalendarDay(day)}
+                >
+                  <Text style={[styles.dayText, day === selectedDay && styles.dayTextSelected]}>
+                    {day || ''}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={styles.timeSection}>
+              <Text style={styles.timeLabel}>Time</Text>
+              <View style={styles.timeControls}>
+                <View style={styles.timeControl}>
+                  <TouchableOpacity style={styles.timeStepButton} onPress={() => adjustDraftTime('hour', 1)}>
+                    <Text style={styles.timeStepText}>+</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.timeValue}>{String(draftDate.getHours()).padStart(2, '0')}</Text>
+                  <TouchableOpacity style={styles.timeStepButton} onPress={() => adjustDraftTime('hour', -1)}>
+                    <Text style={styles.timeStepText}>-</Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.timeSeparator}>:</Text>
+                <View style={styles.timeControl}>
+                  <TouchableOpacity style={styles.timeStepButton} onPress={() => adjustDraftTime('minute', 15)}>
+                    <Text style={styles.timeStepText}>+</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.timeValue}>{String(draftDate.getMinutes()).padStart(2, '0')}</Text>
+                  <TouchableOpacity style={styles.timeStepButton} onPress={() => adjustDraftTime('minute', -15)}>
+                    <Text style={styles.timeStepText}>-</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.calendarActions}>
+              <TouchableOpacity style={styles.cancelDateButton} onPress={() => setActiveDatePicker(null)}>
+                <Text style={styles.cancelDateText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.applyDateButton} onPress={applyDatePicker}>
+                <Text style={styles.applyDateText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     );
   };
 
@@ -289,8 +404,8 @@ const CreateEventScreen = ({ navigation }: any) => {
           </Picker>
         </View>
 
-        {renderDateField('Start Date', startDate, setStartDate, 'start')}
-        {renderDateField('End Date', endDate, setEndDate, 'end')}
+        {renderDateField('Start Date', startDate, 'start')}
+        {renderDateField('End Date', endDate, 'end')}
         
         <TouchableOpacity style={styles.imageBox} onPress={pickImage}>
           <Text style={styles.uploadText}>{image ? 'Image Selected' : 'Tap to Upload Image'}</Text>
@@ -302,6 +417,7 @@ const CreateEventScreen = ({ navigation }: any) => {
           {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.submitText}>Submit for Approval</Text>}
         </TouchableOpacity>
       </ScrollView>
+      {renderCalendarModal()}
     </SafeAreaView>
   );
 };
@@ -315,18 +431,33 @@ const styles = StyleSheet.create({
   dateButton: { backgroundColor: '#0c1a2b', padding: 15, borderRadius: 12, marginBottom: 15 },
   dateButtonText: { color: '#fff' },
   datePlaceholder: { color: '#555' },
-  webDateInputWrapper: { backgroundColor: '#0c1a2b', borderRadius: 12, marginBottom: 15, overflow: 'hidden' },
-  webDateInput: {
-    width: '100%',
-    boxSizing: 'border-box',
-    backgroundColor: '#0c1a2b',
-    color: '#fff',
-    borderWidth: 0,
-    borderStyle: 'solid',
-    outlineStyle: 'none',
-    padding: 15,
-    fontSize: 14,
-  } as any,
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.72)', justifyContent: 'center', padding: 20 },
+  calendarCard: { backgroundColor: '#0c1a2b', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#1e3050' },
+  calendarHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+  calendarTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  monthButton: { width: 40, height: 40, borderRadius: 8, backgroundColor: '#071323', alignItems: 'center', justifyContent: 'center' },
+  monthButtonText: { color: '#00d2ff', fontSize: 28, fontWeight: 'bold' },
+  weekRow: { flexDirection: 'row', marginBottom: 8 },
+  weekDay: { flex: 1, color: '#00d2ff', textAlign: 'center', fontSize: 11, fontWeight: 'bold' },
+  daysGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  dayCell: { width: '14.2857%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
+  dayCellBlank: { opacity: 0 },
+  dayCellSelected: { backgroundColor: '#00d2ff' },
+  dayText: { color: '#fff', fontWeight: '600' },
+  dayTextSelected: { color: '#000b18' },
+  timeSection: { marginTop: 18, alignItems: 'center' },
+  timeLabel: { color: '#00d2ff', fontSize: 12, fontWeight: 'bold', marginBottom: 8, textTransform: 'uppercase' },
+  timeControls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  timeControl: { alignItems: 'center' },
+  timeStepButton: { width: 42, height: 34, borderRadius: 8, backgroundColor: '#071323', alignItems: 'center', justifyContent: 'center' },
+  timeStepText: { color: '#00d2ff', fontSize: 20, fontWeight: 'bold' },
+  timeValue: { color: '#fff', fontSize: 24, fontWeight: 'bold', marginVertical: 8, minWidth: 42, textAlign: 'center' },
+  timeSeparator: { color: '#fff', fontSize: 26, fontWeight: 'bold', marginHorizontal: 10 },
+  calendarActions: { flexDirection: 'row', gap: 10, marginTop: 20 },
+  cancelDateButton: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#071323', alignItems: 'center' },
+  cancelDateText: { color: '#fff', fontWeight: 'bold' },
+  applyDateButton: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#00d2ff', alignItems: 'center' },
+  applyDateText: { color: '#000b18', fontWeight: 'bold' },
   imageBox: { height: 100, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderRadius: 12 },
   uploadText: { color: '#fff' },
   errorText: { color: '#ff6b6b', textAlign: 'center', marginBottom: 15, fontWeight: 'bold' },
