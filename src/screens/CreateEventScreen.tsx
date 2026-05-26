@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, View, Text, TextInput, TouchableOpacity, 
-  ScrollView, Alert, SafeAreaView, ActivityIndicator, Platform, Modal
+  ScrollView, Alert, SafeAreaView, ActivityIndicator, Platform, Modal, useWindowDimensions
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker'; 
@@ -46,6 +46,9 @@ const postFormDataOnWeb = (path: string, formData: FormData) => {
 };
 
 const CreateEventScreen = ({ navigation }: any) => {
+  const { width } = useWindowDimensions();
+  const contentWidth = Math.min(width, 430);
+  const horizontalPadding = width < 360 ? 14 : 20;
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
@@ -381,7 +384,14 @@ const CreateEventScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[styles.scrollContent, { width: contentWidth, paddingHorizontal: horizontalPadding }]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        nestedScrollEnabled
+      >
         <Text style={styles.label}>Title</Text>
         <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholderTextColor="#555" />
         
@@ -424,7 +434,8 @@ const CreateEventScreen = ({ navigation }: any) => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#000b18' },
-  container: { padding: 20 },
+  scrollView: { flex: 1 },
+  scrollContent: { alignSelf: 'center', paddingTop: 20, paddingBottom: 40 },
   input: { backgroundColor: '#0c1a2b', padding: 15, color: '#fff', borderRadius: 12, marginBottom: 15 },
   label: { color: '#00d2ff', marginBottom: 5 },
   pickerContainer: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 15 },

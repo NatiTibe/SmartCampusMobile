@@ -1,13 +1,16 @@
 import React, { useState, useCallback } from 'react';
 import { 
   StyleSheet, View, Text, TouchableOpacity, 
-  SafeAreaView, FlatList, ActivityIndicator, Alert 
+  SafeAreaView, FlatList, ActivityIndicator, Alert, useWindowDimensions 
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../services/apiService';
 import { formatStatus } from '../services/eventDataService';
 
 const OrganizerDashboard = ({ navigation }: any) => {
+  const { width } = useWindowDimensions();
+  const contentWidth = Math.min(width, 430);
+  const horizontalPadding = width < 360 ? 14 : 20;
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState('Pending');
@@ -55,75 +58,82 @@ const OrganizerDashboard = ({ navigation }: any) => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <TouchableOpacity
-        style={styles.profileCircle}
-        onPress={() => navigation.navigate('Profile', { userRole: 'Organizer' })}
-      >
-        <View style={styles.profileHead} />
-        <View style={styles.profileBody} />
-      </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.content, { width: contentWidth, paddingHorizontal: horizontalPadding }]}>
+        <TouchableOpacity
+          style={[styles.profileCircle, { right: horizontalPadding }]}
+          onPress={() => navigation.navigate('Profile', { userRole: 'Organizer' })}
+        >
+          <View style={styles.profileHead} />
+          <View style={styles.profileBody} />
+        </TouchableOpacity>
 
-      <View style={styles.headerRow}>
-        <View>
-          <Text style={styles.header}>My Events</Text>
-          <Text style={styles.headerSub}>Organizer Dashboard</Text>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.header}>My Events</Text>
+            <Text style={styles.headerSub}>Organizer Dashboard</Text>
+          </View>
         </View>
-      </View>
 
-      <View style={styles.filterRow}>
-        {['Pending', 'Approved', 'Rejected'].map((status) => (
-          <TouchableOpacity
-            key={status}
-            style={[
-              styles.filterButton,
-              selectedStatus === status && styles.activeFilterButton,
-            ]}
-            onPress={() => setSelectedStatus(status)}
-          >
-            <Text
+        <View style={styles.filterRow}>
+          {['Pending', 'Approved', 'Rejected'].map((status) => (
+            <TouchableOpacity
+              key={status}
               style={[
-                styles.filterText,
-                selectedStatus === status && styles.activeFilterText,
+                styles.filterButton,
+                selectedStatus === status && styles.activeFilterButton,
               ]}
+              onPress={() => setSelectedStatus(status)}
             >
-              {status}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      
-      {loading ? (
-        <ActivityIndicator size="large" color="#00d2ff" style={{ marginTop: 50 }} />
-      ) : (
-        <FlatList
-          data={filteredEvents}
-          keyExtractor={(item) => item._id}
-          renderItem={renderEventItem}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={<Text style={styles.emptyText}>No {selectedStatus.toLowerCase()} events found.</Text>}
-        />
-      )}
+              <Text
+                style={[
+                  styles.filterText,
+                  selectedStatus === status && styles.activeFilterText,
+                ]}
+              >
+                {status}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        
+        {loading ? (
+          <ActivityIndicator size="large" color="#00d2ff" style={{ marginTop: 50 }} />
+        ) : (
+          <FlatList
+            data={filteredEvents}
+            keyExtractor={(item) => item._id}
+            renderItem={renderEventItem}
+            style={styles.list}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={<Text style={styles.emptyText}>No {selectedStatus.toLowerCase()} events found.</Text>}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            scrollEventThrottle={16}
+            nestedScrollEnabled
+          />
+        )}
 
-      <TouchableOpacity 
-        style={styles.fab} 
-        onPress={() => navigation.navigate('CreateEvent')}
-      >
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.fab, { right: horizontalPadding + 5 }]} 
+          onPress={() => navigation.navigate('CreateEvent')}
+        >
+          <Text style={styles.fabText}>+</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000b18', padding: 20 },
+  safeArea: { flex: 1, backgroundColor: '#000b18', alignItems: 'center' },
+  content: { flex: 1, position: 'relative', paddingTop: 20 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingRight: 58 },
   header: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
   headerSub: { color: 'rgba(255,255,255,0.5)', fontSize: 13, marginTop: 4 },
   profileCircle: {
     position: 'absolute',
     top: 20,
-    right: 20,
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -176,7 +186,8 @@ const styles = StyleSheet.create({
   activeFilterText: {
     color: '#000',
   },
-  listContent: { paddingBottom: 100 },
+  list: { flex: 1 },
+  listContent: { flexGrow: 1, paddingBottom: 110 },
   card: { 
     backgroundColor: '#0c1a2b', 
     padding: 15, 
