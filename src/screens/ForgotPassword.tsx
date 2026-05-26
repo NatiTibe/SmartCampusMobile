@@ -12,7 +12,7 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSent, setIsSent] = useState(false); // Controls whether to show the form or success screen
+  const [isSent, setIsSent] = useState(false);
 
   const handleSendEmail = async () => {
     setError(null);
@@ -25,7 +25,6 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
     setLoading(true);
     try {
       await forgotPassword(email);
-      // If the API call succeeds, switch to the success screen layout
       setIsSent(true);
     } catch (err: any) {
       setError(err.message || 'Failed to send reset link. Please try again.');
@@ -45,7 +44,7 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
         <View style={styles.card}>
           
           {!isSent ? (
-            /* STEP 1: SHOW THE INPUT FORM */
+            /* STEP 1: ENTER EMAIL FLOW */
             <View style={styles.innerForm}>
               <Text style={styles.glowTitle}>Reset Password</Text>
               
@@ -94,7 +93,7 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
               </TouchableOpacity>
             </View>
           ) : (
-            /* STEP 2: SHOW THE SUCCESS SCREEN AFTER EMAIL IS SENT */
+            /* STEP 2: CLEAN SUCCESS CONFIRMATION STATE */
             <View style={styles.innerForm}>
               <View style={styles.successIconBox}>
                 <Text style={styles.successIcon}>🎉</Text>
@@ -103,7 +102,7 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
               <Text style={styles.glowTitle}>Successfully Sent!</Text>
               
               <Text style={styles.subtitleText}>
-                A password reset link has been sent to <Text style={styles.emailHighlight}>{email}</Text>. Please check your inbox and follow the instructions on the web to update your password.
+                A password reset link has been successfully sent to <Text style={styles.emailHighlight}>{email}</Text>. Please check your email inbox to safely complete your password modification on the web.
               </Text>
 
               <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Login')}>
@@ -144,7 +143,7 @@ const styles = StyleSheet.create({
   cancelText: { color: 'rgba(255,255,255,0.5)', fontSize: 15, textDecorationLine: 'underline' },
   errorContainer: { width: '100%', backgroundColor: 'rgba(255, 107, 107, 0.1)', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255, 107, 107, 0.3)', marginBottom: 15 },
   errorText: { color: '#ff6b6b', fontSize: 14, textAlign: 'center', fontWeight: '500' },
-  successIconBox: { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(0, 210, 255, 0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 15 },
+  successIconBox: { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(0, 210, 255, 0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
   successIcon: { fontSize: 28 }
 });
 
