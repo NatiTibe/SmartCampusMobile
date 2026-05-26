@@ -31,7 +31,7 @@ export const login = async (credentials) => {
   } catch (error) {
     // 5. EXTRACT AND LOG THE REAL ERROR
     // This will print the actual reason (e.g., "Invalid Credentials") 
-    // to our browser console so you don't have to guess
+    // to your browser console so you don't have to guess
     const errorMessage = error.response?.data?.message || error.message || 'Unknown login failure';
     console.error('Login Process Failed:', errorMessage);
     
@@ -40,9 +40,13 @@ export const login = async (credentials) => {
   }
 };
 
+/**
+ * Handles password reset link requests (Standardized to resolve 404 bug)
+ */
 export const forgotPassword = async (email) => {
   try {
-    const response = await apiClient.post('/forget-password', { email });
+    // FIXED: Changed endpoint path from '/forget-password' to '/auth/forgot-password'
+    const response = await apiClient.post('/auth/forgot-password', { email });
 
     if (response && response.data) {
       return response.data;
@@ -56,9 +60,9 @@ export const forgotPassword = async (email) => {
   }
 };
 
-
- // Handles password reset link requests.
- 
+/**
+ * Alternative wrapper for password reset requests targeting the same route
+ */
 export const requestPasswordReset = async (email) => {
   try {
     const response = await apiClient.post('/auth/forgot-password', { email });
