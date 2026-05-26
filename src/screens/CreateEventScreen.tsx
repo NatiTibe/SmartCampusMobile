@@ -11,6 +11,7 @@ type SelectedImage = {
   uri: string;
   name: string;
   type: string;
+  file?: File;
 };
 
 const CreateEventScreen = ({ navigation }: any) => {
@@ -60,6 +61,7 @@ const CreateEventScreen = ({ navigation }: any) => {
         uri: asset.uri,
         name: filename,
         type,
+        file: (asset as any).file,
       });
     }
   };
@@ -85,9 +87,14 @@ const CreateEventScreen = ({ navigation }: any) => {
       // Expo web returns a browser URI/data URI, so convert it to a real Blob
       // before appending. Native uploads should keep the React Native file object.
       if (Platform.OS === 'web') {
-        const imageResponse = await fetch(image.uri);
-        const imageBlob = await imageResponse.blob();
-        formData.append('image', imageBlob, image.name);
+        if (image.file) {
+          formData.append('image', image.file);
+        } else {
+          const imageResponse = await fetch(image.uri);
+          const imageBlob = await imageResponse.blob();
+          const imageFile = new File([imageBlob], image.name, { type: image.type || imageBlob.type });
+          formData.append('image', imageFile);
+        }
       } else {
         formData.append('image', {
           uri: image.uri,
