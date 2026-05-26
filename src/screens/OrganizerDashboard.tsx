@@ -9,6 +9,7 @@ import api from '../services/apiService';
 const OrganizerDashboard = ({ navigation }: any) => {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedStatus, setSelectedStatus] = useState('Pending');
 
   // useFocusEffect ensures the list refreshes every time the user navigates back to this screen
   useFocusEffect(
@@ -31,6 +32,11 @@ const OrganizerDashboard = ({ navigation }: any) => {
     }
   };
 
+  const filteredEvents = events.filter((event) => {
+    const status = event.status || 'Pending';
+    return status.toLowerCase() === selectedStatus.toLowerCase();
+  });
+
   const renderEventItem = ({ item }: { item: any }) => (
     <View style={styles.card}>
       <View>
@@ -47,16 +53,38 @@ const OrganizerDashboard = ({ navigation }: any) => {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.header}>My Events</Text>
+
+      <View style={styles.filterRow}>
+        {['Pending', 'Approved', 'Rejected'].map((status) => (
+          <TouchableOpacity
+            key={status}
+            style={[
+              styles.filterButton,
+              selectedStatus === status && styles.activeFilterButton,
+            ]}
+            onPress={() => setSelectedStatus(status)}
+          >
+            <Text
+              style={[
+                styles.filterText,
+                selectedStatus === status && styles.activeFilterText,
+              ]}
+            >
+              {status}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       
       {loading ? (
         <ActivityIndicator size="large" color="#00d2ff" style={{ marginTop: 50 }} />
       ) : (
         <FlatList
-          data={events}
+          data={filteredEvents}
           keyExtractor={(item) => item._id}
           renderItem={renderEventItem}
           contentContainerStyle={styles.listContent}
-          ListEmptyComponent={<Text style={styles.emptyText}>No events submitted yet.</Text>}
+          ListEmptyComponent={<Text style={styles.emptyText}>No {selectedStatus.toLowerCase()} events found.</Text>}
         />
       )}
 
@@ -73,6 +101,33 @@ const OrganizerDashboard = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000b18', padding: 20 },
   header: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 20 },
+  filterRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+  },
+  filterButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#1e3050',
+    alignItems: 'center',
+    backgroundColor: '#0c1a2b',
+  },
+  activeFilterButton: {
+    backgroundColor: '#00d2ff',
+    borderColor: '#00d2ff',
+  },
+  filterText: {
+    color: '#aaa',
+    fontSize: 12,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+  },
+  activeFilterText: {
+    color: '#000',
+  },
   listContent: { paddingBottom: 100 },
   card: { 
     backgroundColor: '#0c1a2b', 
