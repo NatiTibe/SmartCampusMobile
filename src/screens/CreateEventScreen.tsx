@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, View, Text, TextInput, TouchableOpacity, 
-  ScrollView, Alert, SafeAreaView, ActivityIndicator 
+  ScrollView, Alert, SafeAreaView, ActivityIndicator, Platform
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker'; 
 import api from '../services/apiService';
+
+type SelectedImage = {
+  uri: string;
+  name: string;
+  type: string;
+};
 
 const CreateEventScreen = ({ navigation }: any) => {
   const [title, setTitle] = useState('');
@@ -14,7 +20,7 @@ const CreateEventScreen = ({ navigation }: any) => {
   const [capacity, setCapacity] = useState('');
   const [category, setCategory] = useState('');
   const [categories, setCategories] = useState<any[]>([]);
-  const [image, setImage] = useState<string | null>(null);
+  const [image, setImage] = useState<SelectedImage | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -45,7 +51,16 @@ const CreateEventScreen = ({ navigation }: any) => {
 
     // CRITICAL FIX: Check if canceled is false AND assets exist before reading
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      setImage(result.assets[0].uri);
+      const asset = result.assets[0];
+      const filename = asset.fileName || asset.uri.split('/').pop() || 'event.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = asset.mimeType || (match ? `image/${match[1]}` : 'image/jpeg');
+
+      setImage({
+        uri: asset.uri,
+        name: filename,
+        type,
+      });
     }
   };
 
@@ -65,19 +80,22 @@ const CreateEventScreen = ({ navigation }: any) => {
     formData.append('startDate', new Date().toISOString()); 
     formData.append('endDate', new Date(Date.now() + 86400000).toISOString()); 
 
-    // Handle Image
-    const filename = image.split('/').pop() || 'event.jpg';
-    const match = /\.(\w+)$/.exec(filename);
-    const type = match ? `image/${match[1]}` : `image/jpeg`;
-    
-    formData.append('image', {
-      uri: image,
-      name: filename,
-      type: type,
-    } as any);
-
     setLoading(true);
     try {
+      // Expo web returns a browser URI/data URI, so convert it to a real Blob
+      // before appending. Native uploads should keep the React Native file object.
+      if (Platform.OS === 'web') {
+        const imageResponse = await fetch(image.uri);
+        const imageBlob = await imageResponse.blob();
+        formData.append('image', imageBlob, image.name);
+      } else {
+        formData.append('image', {
+          uri: image.uri,
+          name: image.name,
+          type: image.type,
+        } as any);
+      }
+
       // Axios automatically handles the headers for FormData
       await api.post('/organizer/create', formData);
       Alert.alert('Success', 'Event submitted for approval!');
