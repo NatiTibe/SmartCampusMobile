@@ -10,7 +10,6 @@ const AdminDashboard = ({ route, navigation }: any) => {
   const eventImageSize = width > 420 ? 60 : 50;
   const reportMaxWidth = Math.min(width - 40, 620);
 
-  // 1. Unified Master Dataset for the Admin
   const [events, setEvents] = useState([
     { 
       id: '101', title: 'AI Ethics & Future Talk', organizer: 'Computer Science Club',
@@ -42,17 +41,14 @@ const AdminDashboard = ({ route, navigation }: any) => {
     }
   ]);
 
-  // States for Tabs and Reporting Modals
   const [currentFilter, setCurrentFilter] = useState<'Pending' | 'Approved' | 'Rejected'>('Pending');
   const [selectedReview, setSelectedReview] = useState<any>(null);
   const [showReport, setShowReport] = useState(false);
 
-  // LOGIC: Filter list based on top toggle status
   const filteredEvents = useMemo(() => {
     return events.filter(item => item.status === currentFilter);
   }, [events, currentFilter]);
 
-  // LOGIC: Generate Report Metrics sorted by registrations (Highest to Lowest)
   const sortedReportEvents = useMemo(() => {
     return [...events]
       .filter(e => e.status === 'Approved') 
@@ -62,7 +58,6 @@ const AdminDashboard = ({ route, navigation }: any) => {
   const mostPopular = sortedReportEvents[0];
   const leastPopular = sortedReportEvents[sortedReportEvents.length - 1];
 
-  // LOGIC: Change Event Status
   const handleUpdateStatus = (id: string, newStatus: 'Approved' | 'Rejected' | 'Pending') => {
     setEvents(prev => prev.map(ev => 
       ev.id === id ? { ...ev, status: newStatus } : ev
@@ -73,23 +68,26 @@ const AdminDashboard = ({ route, navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* ScrollView container guarantees full scrolling reach */}
       <ScrollView 
-        style={styles.container} 
+        style={{ flex: 1 }} 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         
-        {/* --- HEADER --- */}
+        {/* --- HEADER WITH PROFILE BUTTON --- */}
         <View style={styles.header}>
           <View>
             <Text style={styles.headerTitle}>Admin Panel</Text>
             <Text style={styles.headerSub}>Moderation & Statistics</Text>
           </View>
           
-          <View>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <TouchableOpacity style={styles.reportHeaderBtn} onPress={() => setShowReport(true)}>
-              <Text style={styles.reportHeaderBtnText}>📊 View Report</Text>
+              <Text style={styles.reportHeaderBtnText}>📊 Report</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.profileCircle} onPress={() => navigation.navigate('Profile')}>
+              <Text style={{fontSize: 20}}>👤</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -152,7 +150,6 @@ const AdminDashboard = ({ route, navigation }: any) => {
               <Text style={styles.modalLabel}>Description</Text>
               <Text style={styles.modalDesc}>{selectedReview?.description}</Text>
 
-              {/* Status-Dependent Action Footer */}
               {selectedReview?.status === 'Pending' ? (
                 <View style={styles.actionRow}>
                   <TouchableOpacity style={[styles.actionBtn, styles.rejectBtn]} onPress={() => handleUpdateStatus(selectedReview.id, 'Rejected')}>
@@ -189,8 +186,6 @@ const AdminDashboard = ({ route, navigation }: any) => {
 
             {sortedReportEvents.length > 0 ? (
               <ScrollView showsVerticalScrollIndicator={false}>
-                
-                {/* Highlights Summary */}
                 <View style={styles.insightSummaryBox}>
                   <View style={styles.insightItem}>
                     <Text style={styles.insightLabel}>🔥 Most Participants</Text>
@@ -234,13 +229,13 @@ const AdminDashboard = ({ route, navigation }: any) => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#000b18' },
-  container: { flex: 1, paddingHorizontal: 20 },
-  scrollContent: { paddingBottom: 40 },
+  scrollContent: { flexGrow: 1, paddingBottom: 100, paddingHorizontal: 20 }, // Fixes the scroll clipping
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 20 },
   headerTitle: { color: '#fff', fontSize: 26, fontWeight: 'bold' },
   headerSub: { color: 'rgba(255,255,255,0.5)', fontSize: 13 },
   reportHeaderBtn: { backgroundColor: '#0c1a2b', borderWidth: 1, borderColor: '#00d2ff', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12 },
   reportHeaderBtnText: { color: '#00d2ff', fontWeight: 'bold', fontSize: 13 },
+  profileCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center', marginLeft: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   filterBar: { flexDirection: 'row', backgroundColor: '#0c1a2b', borderRadius: 15, padding: 5, marginBottom: 20 },
   filterBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 10 },
   filterBtnActive: { backgroundColor: '#00d2ff' },

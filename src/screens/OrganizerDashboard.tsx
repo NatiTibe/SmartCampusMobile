@@ -5,7 +5,6 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-// Mock data for events created by this specific organizer
 const MY_CREATED_EVENTS = [
   { 
     id: '1', title: 'AAU Tech Expo', status: 'Approved', 
@@ -28,17 +27,21 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView 
-        style={styles.container}
+        style={{ flex: 1 }}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         
-        {/* Header */}
+        {/* --- HEADER WITH PROFILE BUTTON --- */}
         <View style={styles.header}>
           <View>
             <Text style={styles.headerTitle}>Organizer Panel</Text>
             <Text style={styles.headerSub}>Manage your campus impact</Text>
           </View>
+          
+          <TouchableOpacity style={styles.profileCircle} onPress={() => navigation.navigate('Profile')}>
+            <Text style={{fontSize: 20}}>👤</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Quick Stats Summary */}
@@ -65,7 +68,6 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
 
         <Text style={styles.sectionTitle}>Your Events</Text>
 
-        {/* Render custom arrays iteratively directly inside the layout container */}
         {MY_CREATED_EVENTS.map((item) => (
           <View key={item.id} style={styles.eventCard}>
             <Image source={{ uri: item.image }} style={[styles.eventImg, { width: imageSize, height: imageSize }]} />
@@ -73,12 +75,10 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
               <Text style={styles.eventTitle}>{item.title}</Text>
               <Text style={styles.eventTime}>{item.time}</Text>
               
-              {/* Registration Count */}
               <View style={styles.regBadge}>
                 <Text style={styles.regText}>👥 {item.registrations} Joined</Text>
               </View>
 
-              {/* Status Indicator */}
               <View style={[styles.statusTag, { backgroundColor: item.status === 'Approved' ? 'rgba(40, 167, 69, 0.2)' : 'rgba(255, 193, 7, 0.2)' }]}>
                 <Text style={[styles.statusText, { color: item.status === 'Approved' ? '#28a745' : '#ffc107' }]}>
                   ● {item.status}
@@ -133,11 +133,11 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#000b18' },
-  container: { flex: 1, paddingHorizontal: '5%' },
-  scrollContent: { paddingVertical: 15, paddingBottom: 40 },
+  scrollContent: { flexGrow: 1, paddingVertical: 15, paddingBottom: 100, paddingHorizontal: '5%' }, // Fixes the scroll clipping
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 25 },
   headerTitle: { color: '#fff', fontSize: 26, fontWeight: 'bold' },
   headerSub: { color: 'rgba(255,255,255,0.5)', fontSize: 13 },
+  profileCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25, flexWrap: 'wrap' },
   statBox: { flexBasis: '48%', backgroundColor: '#0c1a2b', padding: 20, borderRadius: 20, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', marginBottom: 10 },
   statNum: { color: '#00d2ff', fontSize: 24, fontWeight: 'bold' },

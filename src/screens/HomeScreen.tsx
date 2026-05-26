@@ -38,10 +38,8 @@ const HomeScreen = ({ route, navigation }: any) => {
     fetchEvents();
   }, []);
 
-  // 1. App State: Categories the student follows
   const [userSubscriptions] = useState(['Tech', 'Social']); 
 
-  // 2. Master Event Data
   const [events, setEvents] = useState([
     { 
       id: '1', title: 'AAU Tech Expo', category: 'Tech', location: '6 Kilo', 
@@ -63,23 +61,19 @@ const HomeScreen = ({ route, navigation }: any) => {
     }
   ]);
 
-  // Modal State for Event Details
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  // LOGIC: Toggle registration
   const handleRegister = (id: string) => {
     setEvents(prev => prev.map(ev => 
       ev.id === id ? { ...ev, isRegistered: !ev.isRegistered, registrationCount: ev.isRegistered ? ev.registrationCount - 1 : ev.registrationCount + 1 } : ev
     ));
   };
 
-  // LOGIC: Filter for Subscribed Feed
   const subscribedFeedEvents = useMemo(() => 
     events.filter(event => userSubscriptions.includes(event.category)), 
   [events, userSubscriptions]);
 
-  // LOGIC: Sort for Popular Section
   const popularEvents = useMemo(() => 
     [...events].sort((a, b) => b.registrationCount - a.registrationCount), 
   [events]);
@@ -90,12 +84,12 @@ const HomeScreen = ({ route, navigation }: any) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView 
-        style={styles.container} 
+        style={{ flex: 1 }} 
         contentContainerStyle={styles.scrollContent} 
         showsVerticalScrollIndicator={false}
       >
         
-        {/* --- HEADER WITH PROFILE BUTTON & ROLE SWITCH --- */}
+        {/* --- HEADER --- */}
         <View style={styles.topHeader}>
           <View>
             <Text style={styles.welcomeText}>Hello, Student!</Text>
@@ -109,13 +103,13 @@ const HomeScreen = ({ route, navigation }: any) => {
               <Text style={{fontSize: 20}}>👤</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.profileCircle, { backgroundColor: '#FF3B30' }]}
+              style={[styles.profileCircle, { backgroundColor: '#FF3B30', width: 'auto', paddingHorizontal: 12 }]}
               onPress={() => {
                 setUserRole?.(nextRole);
                 navigation.navigate(nextRoute, { userRole: nextRole, setUserRole });
               }}
             >
-              <Text style={{fontSize: 14, color: '#fff', fontWeight: 'bold' }}>{`Switch to ${nextRole}`}</Text>
+              <Text style={{fontSize: 12, color: '#fff', fontWeight: 'bold' }}>{`Switch`}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -126,15 +120,12 @@ const HomeScreen = ({ route, navigation }: any) => {
           <Text style={styles.heroText}>
             You have {events.filter(e => e.isRegistered).length} events coming up. Your AI-powered feed found new events matching your interests.
           </Text>
-          
           <TouchableOpacity style={styles.heroBtn} onPress={() => navigation.navigate('BrowseEvents')}>
             <Text style={styles.heroBtnText}>Browse All Events</Text>
           </TouchableOpacity>
-
           <TouchableOpacity style={styles.heroBtnSecondary} onPress={() => navigation.navigate('Schedule')}>
             <Text style={styles.heroBtnText}>View My Schedule</Text>
           </TouchableOpacity>
-
           <TouchableOpacity style={styles.aiBtn} onPress={() => navigation.navigate('AIPicks')}>
             <LinearGradient colors={['#8E2DE2', '#4A00E0']} style={styles.aiGradient}>
               <Text style={styles.heroBtnText}>🪄 Discover AI Picks</Text>
@@ -168,7 +159,7 @@ const HomeScreen = ({ route, navigation }: any) => {
           />
         ) : (
           <View style={styles.emptyFeed}>
-            <Text style={styles.emptyText}>No specific matches found yet. Subscribe to your favorite categories!</Text>
+            <Text style={styles.emptyText}>No specific matches found yet.</Text>
           </View>
         )}
 
@@ -226,12 +217,11 @@ const HomeScreen = ({ route, navigation }: any) => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#000b18' },
-  container: { flex: 1 },
-  scrollContent: { paddingBottom: 40 }, // Extra bottom bounce area
+  scrollContent: { flexGrow: 1, paddingBottom: 100 }, // Fixes the scroll clipping
   topHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginTop: 20 },
   welcomeText: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
   subWelcome: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 4 },
-  profileCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center' },
+  profileCircle: { height: 44, borderRadius: 22, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center', minWidth: 44, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   heroCard: { margin: 20, borderRadius: 30, padding: 25 },
   heroEmoji: { fontSize: 30, marginBottom: 10 },
   heroText: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 20, lineHeight: 22 },
