@@ -95,7 +95,7 @@ const HomeScreen = ({ route, navigation }: any) => {
           
           <TouchableOpacity 
             style={styles.profileCircle} 
-            onPress={() => navigation.navigate('Profile', { id: 'student_id' })} // Pass ID so ProfileScreen knows it's a student
+            onPress={() => navigation.navigate('Profile', { userRole: 'Student' })}
           >
             <Text style={{fontSize: 20}}>👤</Text>
           </TouchableOpacity>

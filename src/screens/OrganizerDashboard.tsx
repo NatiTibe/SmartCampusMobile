@@ -56,7 +56,19 @@ const OrganizerDashboard = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>My Events</Text>
+      <View style={styles.headerRow}>
+        <View>
+          <Text style={styles.header}>My Events</Text>
+          <Text style={styles.headerSub}>Organizer Dashboard</Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.profileCircle}
+          onPress={() => navigation.navigate('Profile', { userRole: 'Organizer' })}
+        >
+          <Text style={styles.profileIcon}>👤</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.filterRow}>
         {['Pending', 'Approved', 'Rejected'].map((status) => (
@@ -104,7 +116,11 @@ const OrganizerDashboard = ({ navigation }: any) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000b18', padding: 20 },
-  header: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 20 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  header: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
+  headerSub: { color: 'rgba(255,255,255,0.5)', fontSize: 13, marginTop: 4 },
+  profileCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  profileIcon: { fontSize: 20 },
   filterRow: {
     flexDirection: 'row',
     gap: 10,

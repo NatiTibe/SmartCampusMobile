@@ -102,7 +102,7 @@ const AdminDashboard = ({ route, navigation }: any) => {
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.profileCircle} 
-              onPress={() => navigation.navigate('Profile')}
+              onPress={() => navigation.navigate('Profile', { userRole: 'Admin' })}
             >
               <Text style={{fontSize: 20}}>👤</Text>
             </TouchableOpacity>
