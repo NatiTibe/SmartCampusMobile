@@ -1,45 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, View, Text, TouchableOpacity, 
   SafeAreaView, Image, ScrollView, useWindowDimensions, Modal 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-
-const MY_CREATED_EVENTS = [
-  { 
-    id: '1', title: 'AAU Tech Expo', status: 'Approved', 
-    registrations: 450, time: 'May 10, 10:00 AM', 
-    image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4' 
-  },
-  { 
-    id: '2', title: 'AI Ethics Talk', status: 'Pending', 
-    registrations: 0, time: 'June 2, 02:00 PM', 
-    image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e' 
-  },
-];
+import api from '../services/apiService';
 
 const OrganizerDashboard = ({ route, navigation }: any) => {
   const { width } = useWindowDimensions();
   const statBoxBasis = width > 640 ? '48%' : '100%';
   const imageSize = width > 420 ? 70 : 60;
+  
+  // Real Organizer Dataset initialized empty (No demo events)
+  const [events, setEvents] = useState<any[]>([]);
   const [selectedReport, setSelectedReport] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchOrganizerEvents = async () => {
+      try {
+        const response = await api.get('/event/organizer-events');
+        const backendEvents = response.data?.events || response.data || [];
+        setEvents(backendEvents.map((ev: any) => ({
+          id: ev._id || ev.id,
+          title: ev.title || '',
+          status: ev.status || 'Pending',
+          registrations: ev.registrationCount || ev.registeredCount || 0,
+          time: ev.startDate ? `${new Date(ev.startDate).toDateString()} ${ev.startTime || ''}` : ev.time || '',
+          image: ev.imageUrl || ev.image || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4',
+          description: ev.description || ''
+        })));
+      } catch (error) {
+        console.log('Failed to fetch organizer events', error);
+      }
+    };
+    fetchOrganizerEvents();
+  }, []);
+
+  // Compute metrics dynamically based on active state updates
+  const totalReach = events.reduce((acc, ev) => acc + (ev.registrations || 0), 0);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView 
-        style={{ flex: 1 }}
+        style={styles.container} 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         
-        {/* --- HEADER WITH PROFILE BUTTON --- */}
+        {/* Header with Profile Button (NO ID PASSED) */}
         <View style={styles.header}>
           <View>
             <Text style={styles.headerTitle}>Organizer Panel</Text>
             <Text style={styles.headerSub}>Manage your campus impact</Text>
           </View>
-          
-          <TouchableOpacity style={styles.profileCircle} onPress={() => navigation.navigate('Profile')}>
+          <TouchableOpacity 
+            style={styles.profileCircle} 
+            onPress={() => navigation.navigate('Profile')} // Cleared ID params
+          >
             <Text style={{fontSize: 20}}>👤</Text>
           </TouchableOpacity>
         </View>
@@ -47,11 +64,11 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
         {/* Quick Stats Summary */}
         <View style={styles.statsRow}>
           <View style={[styles.statBox, { flexBasis: statBoxBasis }] }>
-            <Text style={styles.statNum}>450</Text>
+            <Text style={styles.statNum}>{totalReach}</Text>
             <Text style={styles.statLabel}>Total Reach</Text>
           </View>
           <View style={[styles.statBox, { flexBasis: statBoxBasis }] }>
-            <Text style={styles.statNum}>{MY_CREATED_EVENTS.length}</Text>
+            <Text style={styles.statNum}>{events.length}</Text>
             <Text style={styles.statLabel}>Events</Text>
           </View>
         </View>
@@ -68,43 +85,51 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
 
         <Text style={styles.sectionTitle}>Your Events</Text>
 
-        {MY_CREATED_EVENTS.map((item) => (
-          <View key={item.id} style={styles.eventCard}>
-            <Image source={{ uri: item.image }} style={[styles.eventImg, { width: imageSize, height: imageSize }]} />
-            <View style={styles.eventInfo}>
-              <Text style={styles.eventTitle}>{item.title}</Text>
-              <Text style={styles.eventTime}>{item.time}</Text>
+        {/* Dynamic Map loop resolves structural scrolling hang-ups */}
+        {events.length > 0 ? (
+          events.map((item) => (
+            <View key={item.id} style={styles.eventCard}>
+              <Image source={{ uri: item.image }} style={[styles.eventImg, { width: imageSize, height: imageSize }]} />
+              <View style={styles.eventInfo}>
+                <Text style={styles.eventTitle}>{item.title}</Text>
+                <Text style={styles.eventTime}>{item.time}</Text>
+                
+                {/* Registration Count */}
+                <View style={styles.regBadge}>
+                  <Text style={styles.regText}>👥 {item.registrations} Joined</Text>
+                </View>
+
+                {/* Status Indicator */}
+                <View style={[styles.statusTag, { backgroundColor: item.status === 'Approved' ? 'rgba(40, 167, 69, 0.2)' : 'rgba(255, 193, 7, 0.2)' }]}>
+                  <Text style={[styles.statusText, { color: item.status === 'Approved' ? '#28a745' : '#ffc107' }]}>
+                    ● {item.status}
+                  </Text>
+                </View>
+              </View>
               
-              <View style={styles.regBadge}>
-                <Text style={styles.regText}>👥 {item.registrations} Joined</Text>
-              </View>
+              <TouchableOpacity 
+                style={styles.reportBtn} 
+                onPress={() => setSelectedReport(item)}
+              >
+                <Text style={styles.reportBtnText}>📊 Analytics</Text>
+              </TouchableOpacity>
 
-              <View style={[styles.statusTag, { backgroundColor: item.status === 'Approved' ? 'rgba(40, 167, 69, 0.2)' : 'rgba(255, 193, 7, 0.2)' }]}>
-                <Text style={[styles.statusText, { color: item.status === 'Approved' ? '#28a745' : '#ffc107' }]}>
-                  ● {item.status}
-                </Text>
-              </View>
+              <TouchableOpacity 
+                style={styles.editBtn} 
+                onPress={() => navigation.navigate('CreateEvent', { event: item })}
+              >
+                <Text style={styles.editText}>Edit</Text>
+              </TouchableOpacity>
             </View>
-            
-            <TouchableOpacity 
-              style={styles.reportBtn} 
-              onPress={() => setSelectedReport(item)}
-            >
-              <Text style={styles.reportBtnText}>📊 Analytics</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.editBtn} 
-              onPress={() => navigation.navigate('CreateEvent', { event: item })}
-            >
-              <Text style={styles.editText}>Edit</Text>
-            </TouchableOpacity>
+          ))
+        ) : (
+          <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+            <Text style={{ color: 'rgba(255,255,255,0.4)' }}>No posted events found.</Text>
           </View>
-        ))}
+        )}
 
       </ScrollView>
 
-      {/* --- ANALYSIS REPORT STATE MODAL --- */}
       <Modal visible={!!selectedReport} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -133,7 +158,8 @@ const OrganizerDashboard = ({ route, navigation }: any) => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#000b18' },
-  scrollContent: { flexGrow: 1, paddingVertical: 15, paddingBottom: 100, paddingHorizontal: '5%' }, // Fixes the scroll clipping
+  container: { flex: 1 },
+  scrollContent: { flexGrow: 1, paddingVertical: 15, paddingBottom: 80, paddingHorizontal: '5%' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 25 },
   headerTitle: { color: '#fff', fontSize: 26, fontWeight: 'bold' },
   headerSub: { color: 'rgba(255,255,255,0.5)', fontSize: 13 },

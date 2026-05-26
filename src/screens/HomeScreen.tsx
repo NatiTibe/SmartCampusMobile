@@ -11,25 +11,26 @@ const HomeScreen = ({ route, navigation }: any) => {
   const nextRole = userRole === 'Student' ? 'Organizer' : userRole === 'Organizer' ? 'Admin' : 'Student';
   const nextRoute = userRole === 'Student' ? 'OrganizerDashboard' : userRole === 'Organizer' ? 'AdminDashboard' : 'Home';
 
+  // Master Event Data initialized empty (No demo events)
+  const [events, setEvents] = useState<any[]>([]);
+
   useEffect(() => {
     const fetchEvents = async () => {
       try {
         const response = await api.get('/event/all-events');
-        const backendEvents = response.data?.events || [];
-        if (backendEvents.length > 0) {
-          setEvents(backendEvents.map((ev: any) => ({
-            id: ev._id || ev.id,
-            title: ev.title || '',
-            category: ev.category?.name || ev.category || 'General',
-            location: ev.location || 'Campus',
-            date: ev.startDate ? new Date(ev.startDate).toDateString() : ev.date || '',
-            time: ev.startTime || ev.time || '',
-            registrationCount: ev.registrationCount || ev.registeredCount || 0,
-            isRegistered: false,
-            image: ev.imageUrl || ev.image || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4',
-            description: ev.description || '',
-          })));
-        }
+        const backendEvents = response.data?.events || response.data || [];
+        setEvents(backendEvents.map((ev: any) => ({
+          id: ev._id || ev.id,
+          title: ev.title || '',
+          category: ev.category?.name || ev.category || 'General',
+          location: ev.location || 'Campus',
+          date: ev.startDate ? new Date(ev.startDate).toDateString() : ev.date || '',
+          time: ev.startTime || ev.time || '',
+          registrationCount: ev.registrationCount || ev.registeredCount || 0,
+          isRegistered: false,
+          image: ev.imageUrl || ev.image || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4',
+          description: ev.description || '',
+        })));
       } catch (error) {
         console.log('Failed to load backend events', error);
       }
@@ -39,28 +40,6 @@ const HomeScreen = ({ route, navigation }: any) => {
   }, []);
 
   const [userSubscriptions] = useState(['Tech', 'Social']); 
-
-  const [events, setEvents] = useState([
-    { 
-      id: '1', title: 'AAU Tech Expo', category: 'Tech', location: '6 Kilo', 
-      date: 'May 10', time: '10:00 AM', registrationCount: 450, isRegistered: false,
-      image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4',
-      description: 'A showcase of student innovation in AI and Robotics. Join us for networking!'
-    },
-    { 
-      id: '2', title: 'Film festival', category: 'Social', location: '6 Kilo campus', 
-      date: 'May 6', time: '03:00 PM', registrationCount: 520, isRegistered: false,
-      image: 'https://images.unsplash.com/photo-1485446234645-a62644f84728',
-      description: 'Experience local student films and documentaries in an outdoor setting.'
-    },
-    { 
-      id: '3', title: 'Python Bootcamp', category: 'Tech', location: 'Digital Library', 
-      date: 'May 12', time: '09:00 AM', registrationCount: 120, isRegistered: false,
-      image: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4',
-      description: 'A beginner-friendly intensive coding session for Python enthusiasts.'
-    }
-  ]);
-
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -84,12 +63,12 @@ const HomeScreen = ({ route, navigation }: any) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView 
-        style={{ flex: 1 }} 
-        contentContainerStyle={styles.scrollContent} 
+        style={styles.container} 
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         
-        {/* --- HEADER --- */}
+        {/* --- HEADER WITH PROFILE BUTTON & ROLE SWITCH --- */}
         <View style={styles.topHeader}>
           <View>
             <Text style={styles.welcomeText}>Hello, Student!</Text>
@@ -98,7 +77,7 @@ const HomeScreen = ({ route, navigation }: any) => {
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <TouchableOpacity 
               style={[styles.profileCircle, { marginRight: 10 }]} 
-              onPress={() => navigation.navigate('Profile')}
+              onPress={() => navigation.navigate('Profile', { id: 'student_id' })} // Pass ID for student only
             >
               <Text style={{fontSize: 20}}>👤</Text>
             </TouchableOpacity>
@@ -120,12 +99,15 @@ const HomeScreen = ({ route, navigation }: any) => {
           <Text style={styles.heroText}>
             You have {events.filter(e => e.isRegistered).length} events coming up. Your AI-powered feed found new events matching your interests.
           </Text>
+          
           <TouchableOpacity style={styles.heroBtn} onPress={() => navigation.navigate('BrowseEvents')}>
             <Text style={styles.heroBtnText}>Browse All Events</Text>
           </TouchableOpacity>
+
           <TouchableOpacity style={styles.heroBtnSecondary} onPress={() => navigation.navigate('Schedule')}>
             <Text style={styles.heroBtnText}>View My Schedule</Text>
           </TouchableOpacity>
+
           <TouchableOpacity style={styles.aiBtn} onPress={() => navigation.navigate('AIPicks')}>
             <LinearGradient colors={['#8E2DE2', '#4A00E0']} style={styles.aiGradient}>
               <Text style={styles.heroBtnText}>🪄 Discover AI Picks</Text>
@@ -159,7 +141,7 @@ const HomeScreen = ({ route, navigation }: any) => {
           />
         ) : (
           <View style={styles.emptyFeed}>
-            <Text style={styles.emptyText}>No specific matches found yet.</Text>
+            <Text style={styles.emptyText}>No matches found matching your subscribed categories.</Text>
           </View>
         )}
 
@@ -171,16 +153,22 @@ const HomeScreen = ({ route, navigation }: any) => {
           </TouchableOpacity>
         </View>
 
-        {popularEvents.map((item) => (
-          <TouchableOpacity key={item.id} style={styles.popularCard} onPress={() => { setSelectedEvent(item); setModalVisible(true); }}>
-            <Image source={{ uri: item.image }} style={styles.popularImage} />
-            <View style={styles.popularInfo}>
-              <Text style={styles.popularCategory}>{item.category}</Text>
-              <Text style={styles.popularTitle}>{item.title}</Text>
-              <Text style={styles.popularMeta}>🔥 {item.registrationCount} students joined</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
+        {popularEvents.length > 0 ? (
+          popularEvents.map((item) => (
+            <TouchableOpacity key={item.id} style={styles.popularCard} onPress={() => { setSelectedEvent(item); setModalVisible(true); }}>
+              <Image source={{ uri: item.image }} style={styles.popularImage} />
+              <View style={styles.popularInfo}>
+                <Text style={styles.popularCategory}>{item.category}</Text>
+                <Text style={styles.popularTitle}>{item.title}</Text>
+                <Text style={styles.popularMeta}>🔥 {item.registrationCount} students joined</Text>
+              </View>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <View style={styles.emptyFeed}>
+            <Text style={styles.emptyText}>No public events found dynamically.</Text>
+          </View>
+        )}
 
       </ScrollView>
 
@@ -217,11 +205,12 @@ const HomeScreen = ({ route, navigation }: any) => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#000b18' },
-  scrollContent: { flexGrow: 1, paddingBottom: 100 }, // Fixes the scroll clipping
+  container: { flex: 1 },
+  scrollContent: { flexGrow: 1, paddingBottom: 80 },
   topHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginTop: 20 },
   welcomeText: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
   subWelcome: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 4 },
-  profileCircle: { height: 44, borderRadius: 22, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center', minWidth: 44, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  profileCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center' },
   heroCard: { margin: 20, borderRadius: 30, padding: 25 },
   heroEmoji: { fontSize: 30, marginBottom: 10 },
   heroText: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 20, lineHeight: 22 },
@@ -239,7 +228,7 @@ const styles = StyleSheet.create({
   miniBadgeText: { color: '#00d2ff', fontSize: 10, fontWeight: 'bold' },
   miniTitle: { color: '#fff', fontSize: 15, fontWeight: 'bold', marginTop: 5 },
   miniMeta: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 2 },
-  emptyFeed: { padding: 40, alignItems: 'center' },
+  emptyFeed: { padding: 40, width: '100%', alignItems: 'center' },
   emptyText: { color: 'rgba(255,255,255,0.5)', textAlign: 'center' },
   popularCard: { flexDirection: 'row', backgroundColor: '#0c1a2b', marginHorizontal: 20, marginBottom: 15, borderRadius: 20, padding: 12, alignItems: 'center' },
   popularImage: { width: 80, height: 80, borderRadius: 15 },

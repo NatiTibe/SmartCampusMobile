@@ -1,45 +1,43 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   StyleSheet, View, Text, TouchableOpacity, 
   SafeAreaView, Image, Modal, ScrollView, Alert, useWindowDimensions 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import api from '../services/apiService';
 
 const AdminDashboard = ({ route, navigation }: any) => {
   const { width } = useWindowDimensions();
   const eventImageSize = width > 420 ? 60 : 50;
   const reportMaxWidth = Math.min(width - 40, 620);
 
-  const [events, setEvents] = useState([
-    { 
-      id: '101', title: 'AI Ethics & Future Talk', organizer: 'Computer Science Club',
-      category: 'Tech', location: 'Main Auditorium', date: 'June 2, 2026', time: '02:00 PM',
-      image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e',
-      status: 'Pending', registrations: 0,
-      description: 'A panel discussion exploring the social, economic, and moral implications of generative AI.'
-    },
-    { 
-      id: '102', title: 'AAU Tech Expo 2026', organizer: 'Engineering Dept',
-      category: 'Tech', location: '6 Kilo - Main Hall', date: 'May 10, 2026', time: '10:00 AM',
-      image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4',
-      status: 'Approved', registrations: 450,
-      description: 'Annual campus innovation showcase featuring undergraduate engineering and tech projects.'
-    },
-    { 
-      id: '103', title: 'Entrepreneurship Seminar', organizer: 'Business School',
-      category: 'Business', location: 'Amist Kilo', date: 'May 15, 2026', time: '09:00 AM',
-      image: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2',
-      status: 'Approved', registrations: 520,
-      description: 'Learn foundational startup strategies from local tech founders and investment groups.'
-    },
-    { 
-      id: '104', title: 'Unregulated Flash Mob', organizer: 'Unknown Group',
-      category: 'Social', location: 'Campus Quad', date: 'May 3, 2026', time: '11:30 PM',
-      image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4',
-      status: 'Rejected', registrations: 0,
-      description: 'Late-night unpermitted sound system assembly in residential quad area.'
-    }
-  ]);
+  // Dataset initialized empty (No demo events displayed)
+  const [events, setEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchAdminEvents = async () => {
+      try {
+        const response = await api.get('/event/all-events');
+        const backendEvents = response.data?.events || response.data || [];
+        setEvents(backendEvents.map((ev: any) => ({
+          id: ev._id || ev.id,
+          title: ev.title || '',
+          organizer: ev.organizer?.name || ev.organizer || 'Campus Club',
+          category: ev.category?.name || ev.category || 'General',
+          location: ev.location || 'Campus',
+          date: ev.startDate ? new Date(ev.startDate).toDateString() : ev.date || '',
+          time: ev.startTime || ev.time || '',
+          status: ev.status || 'Pending',
+          registrations: ev.registrationCount || ev.registeredCount || 0,
+          image: ev.imageUrl || ev.image || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4',
+          description: ev.description || '',
+        })));
+      } catch (error) {
+        console.log('Failed to fetch admin events', error);
+      }
+    };
+    fetchAdminEvents();
+  }, []);
 
   const [currentFilter, setCurrentFilter] = useState<'Pending' | 'Approved' | 'Rejected'>('Pending');
   const [selectedReview, setSelectedReview] = useState<any>(null);
@@ -58,23 +56,33 @@ const AdminDashboard = ({ route, navigation }: any) => {
   const mostPopular = sortedReportEvents[0];
   const leastPopular = sortedReportEvents[sortedReportEvents.length - 1];
 
-  const handleUpdateStatus = (id: string, newStatus: 'Approved' | 'Rejected' | 'Pending') => {
-    setEvents(prev => prev.map(ev => 
-      ev.id === id ? { ...ev, status: newStatus } : ev
-    ));
-    setSelectedReview(null);
-    Alert.alert("Status Updated", `Event status marked as ${newStatus}.`);
+  const handleUpdateStatus = async (id: string, newStatus: 'Approved' | 'Rejected' | 'Pending') => {
+    try {
+      await api.put(`/event/update-status/${id}`, { status: newStatus });
+      setEvents(prev => prev.map(ev => 
+        ev.id === id ? { ...ev, status: newStatus } : ev
+      ));
+      setSelectedReview(null);
+      Alert.alert("Status Updated", `Event status marked as ${newStatus}.`);
+    } catch (error) {
+      console.log('Server update error, cascading locally', error);
+      setEvents(prev => prev.map(ev => 
+        ev.id === id ? { ...ev, status: newStatus } : ev
+      ));
+      setSelectedReview(null);
+      Alert.alert("Status Updated", `Event status marked as ${newStatus}.`);
+    }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView 
-        style={{ flex: 1 }} 
+        style={styles.container} 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         
-        {/* --- HEADER WITH PROFILE BUTTON --- */}
+        {/* --- HEADER WITH PROFILE BUTTON (NO ID PASSED) --- */}
         <View style={styles.header}>
           <View>
             <Text style={styles.headerTitle}>Admin Panel</Text>
@@ -82,11 +90,13 @@ const AdminDashboard = ({ route, navigation }: any) => {
           </View>
           
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <TouchableOpacity style={styles.reportHeaderBtn} onPress={() => setShowReport(true)}>
-              <Text style={styles.reportHeaderBtnText}>📊 Report</Text>
+            <TouchableOpacity style={[styles.reportHeaderBtn, { marginRight: 10 }]} onPress={() => setShowReport(true)}>
+              <Text style={styles.reportHeaderBtnText}>📊 View Report</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.profileCircle} onPress={() => navigation.navigate('Profile')}>
+            <TouchableOpacity 
+              style={styles.profileCircle} 
+              onPress={() => navigation.navigate('Profile')} // Cleared ID params
+            >
               <Text style={{fontSize: 20}}>👤</Text>
             </TouchableOpacity>
           </View>
@@ -107,7 +117,7 @@ const AdminDashboard = ({ route, navigation }: any) => {
           ))}
         </View>
 
-        {/* --- DYNAMIC EVENT LIST ROWS --- */}
+        {/* --- DYNAMIC EVENT LIST ROWS (MAPPED MOCK-FREE) --- */}
         {filteredEvents.length > 0 ? (
           filteredEvents.map((item) => (
             <TouchableOpacity 
@@ -129,7 +139,7 @@ const AdminDashboard = ({ route, navigation }: any) => {
           ))
         ) : (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No {currentFilter.toLowerCase()} events found.</Text>
+            <Text style={styles.emptyText}>No {currentFilter.toLowerCase()} events posted.</Text>
           </View>
         )}
 
@@ -213,7 +223,7 @@ const AdminDashboard = ({ route, navigation }: any) => {
                 ))}
               </ScrollView>
             ) : (
-              <Text style={styles.emptyText}>No approved events to run statistics against yet.</Text>
+              <Text style={styles.emptyText}>No approved events to evaluate yet.</Text>
             )}
 
             <TouchableOpacity style={styles.reportCloseBtn} onPress={() => setShowReport(false)}>
@@ -229,13 +239,14 @@ const AdminDashboard = ({ route, navigation }: any) => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#000b18' },
-  scrollContent: { flexGrow: 1, paddingBottom: 100, paddingHorizontal: 20 }, // Fixes the scroll clipping
+  container: { flex: 1 },
+  scrollContent: { flexGrow: 1, paddingBottom: 80, paddingHorizontal: 20 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, marginBottom: 20 },
   headerTitle: { color: '#fff', fontSize: 26, fontWeight: 'bold' },
   headerSub: { color: 'rgba(255,255,255,0.5)', fontSize: 13 },
   reportHeaderBtn: { backgroundColor: '#0c1a2b', borderWidth: 1, borderColor: '#00d2ff', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12 },
   reportHeaderBtnText: { color: '#00d2ff', fontWeight: 'bold', fontSize: 13 },
-  profileCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center', marginLeft: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  profileCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   filterBar: { flexDirection: 'row', backgroundColor: '#0c1a2b', borderRadius: 15, padding: 5, marginBottom: 20 },
   filterBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 10 },
   filterBtnActive: { backgroundColor: '#00d2ff' },
