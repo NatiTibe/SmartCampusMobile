@@ -30,11 +30,12 @@ export const login = async (credentials) => {
 };
 
 /**
- * Calls backend password recovery api setup to dispatch 6-digit codes
+ * Sends email to trigger backend hex-token generation
+ * Matches backend route: authRouter.post("/forget-password", ...)
  */
 export const forgotPassword = async (email) => {
   try {
-    const response = await apiClient.post('/auth/forgot-password', { email });
+    const response = await apiClient.post('/auth/forget-password', { email });
 
     if (response && response.data) {
       return response.data;
@@ -49,16 +50,21 @@ export const forgotPassword = async (email) => {
 };
 
 /**
- * Alternative wrapper for password reset requests targeting the same route
+ * Sends the hex token and new password to the backend to complete the reset
+ * Matches backend route: authRouter.post("/reset-password", ...)
  */
-export const requestPasswordReset = async (email) => {
+export const resetPassword = async (token, password) => {
   try {
-    const response = await apiClient.post('/auth/forgot-password', { email });
-    return response.data;
+    const response = await apiClient.post('/auth/reset-password', { token, password });
+    
+    if (response && response.data) {
+      return response.data;
+    }
+
+    throw new Error('No data received from server');
   } catch (error) {
-    const err = error;
-    const errorMessage = err?.response?.data?.message || err?.message || 'Reset request failed';
-    console.error('Forgot Password Failed:', errorMessage);
+    const errorMessage = error.response?.data?.message || error.message || 'Invalid token or password reset failed';
+    console.error('Reset Password Failed:', errorMessage);
     throw new Error(errorMessage);
   }
 };
