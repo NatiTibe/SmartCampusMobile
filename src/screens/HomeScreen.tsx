@@ -7,10 +7,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import api from '../services/apiService';
 
 const HomeScreen = ({ route, navigation }: any) => {
-  const { setUserRole, userRole = 'Student' } = route.params || {};
-  const nextRole = userRole === 'Student' ? 'Organizer' : userRole === 'Organizer' ? 'Admin' : 'Student';
-  const nextRoute = userRole === 'Student' ? 'OrganizerDashboard' : userRole === 'Organizer' ? 'AdminDashboard' : 'Home';
-
   // Master Event Data initialized empty (No demo events)
   const [events, setEvents] = useState<any[]>([]);
 
@@ -68,29 +64,19 @@ const HomeScreen = ({ route, navigation }: any) => {
         showsVerticalScrollIndicator={false}
       >
         
-        {/* --- HEADER WITH PROFILE BUTTON & ROLE SWITCH --- */}
+        {/* --- HEADER WITH PROFILE BUTTON (SWITCH REMOVED) --- */}
         <View style={styles.topHeader}>
           <View>
             <Text style={styles.welcomeText}>Hello, Student!</Text>
             <Text style={styles.subWelcome}>Welcome back to Smart Campus</Text>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <TouchableOpacity 
-              style={[styles.profileCircle, { marginRight: 10 }]} 
-              onPress={() => navigation.navigate('Profile', { id: 'student_id' })} // Pass ID for student only
-            >
-              <Text style={{fontSize: 20}}>👤</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.profileCircle, { backgroundColor: '#FF3B30', width: 'auto', paddingHorizontal: 12 }]}
-              onPress={() => {
-                setUserRole?.(nextRole);
-                navigation.navigate(nextRoute, { userRole: nextRole, setUserRole });
-              }}
-            >
-              <Text style={{fontSize: 12, color: '#fff', fontWeight: 'bold' }}>{`Switch`}</Text>
-            </TouchableOpacity>
-          </View>
+          
+          <TouchableOpacity 
+            style={styles.profileCircle} 
+            onPress={() => navigation.navigate('Profile', { id: 'student_id' })} // Pass ID for student only
+          >
+            <Text style={{fontSize: 20}}>👤</Text>
+          </TouchableOpacity>
         </View>
 
         {/* --- HERO SECTION --- */}
@@ -210,7 +196,7 @@ const styles = StyleSheet.create({
   topHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginTop: 20 },
   welcomeText: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
   subWelcome: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 4 },
-  profileCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center' },
+  profileCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   heroCard: { margin: 20, borderRadius: 30, padding: 25 },
   heroEmoji: { fontSize: 30, marginBottom: 10 },
   heroText: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 20, lineHeight: 22 },
