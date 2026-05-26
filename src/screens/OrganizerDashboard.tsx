@@ -56,18 +56,19 @@ const OrganizerDashboard = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <TouchableOpacity
+        style={styles.profileCircle}
+        onPress={() => navigation.navigate('Profile', { userRole: 'Organizer' })}
+      >
+        <View style={styles.profileHead} />
+        <View style={styles.profileBody} />
+      </TouchableOpacity>
+
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.header}>My Events</Text>
           <Text style={styles.headerSub}>Organizer Dashboard</Text>
         </View>
-
-        <TouchableOpacity
-          style={styles.profileCircle}
-          onPress={() => navigation.navigate('Profile', { userRole: 'Organizer' })}
-        >
-          <Text style={styles.profileIcon}>👤</Text>
-        </TouchableOpacity>
       </View>
 
       <View style={styles.filterRow}>
@@ -116,11 +117,38 @@ const OrganizerDashboard = ({ navigation }: any) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000b18', padding: 20 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingRight: 58 },
   header: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
   headerSub: { color: 'rgba(255,255,255,0.5)', fontSize: 13, marginTop: 4 },
-  profileCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  profileIcon: { fontSize: 20 },
+  profileCircle: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#0c1a2b',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    zIndex: 20,
+    elevation: 6,
+  },
+  profileHead: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#7c4dff',
+    marginBottom: 2,
+  },
+  profileBody: {
+    width: 22,
+    height: 10,
+    borderTopLeftRadius: 11,
+    borderTopRightRadius: 11,
+    backgroundColor: '#7c4dff',
+  },
   filterRow: {
     flexDirection: 'row',
     gap: 10,
