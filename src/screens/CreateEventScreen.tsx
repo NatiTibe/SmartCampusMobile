@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker'; 
+import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../services/apiService';
 
 type SelectedImage = {
@@ -58,11 +59,75 @@ const CreateEventScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [activeDatePicker, setActiveDatePicker] = useState<'start' | 'end' | null>(null);
 
   const parseDateInput = (value: string) => {
     const normalized = value.includes('T') ? value : value.replace(' ', 'T');
     const date = new Date(normalized);
     return Number.isNaN(date.getTime()) ? null : date;
+  };
+
+  const toDateTimeLocalValue = (date: Date) => {
+    const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return offsetDate.toISOString().slice(0, 16);
+  };
+
+  const formatDateForDisplay = (value: string) => {
+    const date = parseDateInput(value);
+    if (!date) return '';
+    return date.toLocaleString([], {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const renderDateField = (
+    label: string,
+    value: string,
+    onChange: (value: string) => void,
+    pickerKey: 'start' | 'end',
+  ) => {
+    const selectedDate = parseDateInput(value) || new Date();
+
+    return (
+      <>
+        <Text style={styles.label}>{label}</Text>
+        {Platform.OS === 'web' ? (
+          <View style={styles.webDateInputWrapper}>
+            {React.createElement('input', {
+              type: 'datetime-local',
+              value,
+              onChange: (event: any) => onChange(event.target.value),
+              style: styles.webDateInput,
+            })}
+          </View>
+        ) : (
+          <>
+            <TouchableOpacity style={styles.dateButton} onPress={() => setActiveDatePicker(pickerKey)}>
+              <Text style={[styles.dateButtonText, !value && styles.datePlaceholder]}>
+                {formatDateForDisplay(value) || 'Select date and time'}
+              </Text>
+            </TouchableOpacity>
+            {activeDatePicker === pickerKey && (
+              <DateTimePicker
+                value={selectedDate}
+                mode="datetime"
+                display="default"
+                onChange={(_, selected) => {
+                  setActiveDatePicker(null);
+                  if (selected) {
+                    onChange(toDateTimeLocalValue(selected));
+                  }
+                }}
+              />
+            )}
+          </>
+        )}
+      </>
+    );
   };
 
   const validateEventForm = () => {
@@ -224,23 +289,8 @@ const CreateEventScreen = ({ navigation }: any) => {
           </Picker>
         </View>
 
-        <Text style={styles.label}>Start Date</Text>
-        <TextInput
-          style={styles.input}
-          value={startDate}
-          onChangeText={setStartDate}
-          placeholder="2026-05-26 14:00"
-          placeholderTextColor="#555"
-        />
-
-        <Text style={styles.label}>End Date</Text>
-        <TextInput
-          style={styles.input}
-          value={endDate}
-          onChangeText={setEndDate}
-          placeholder="2026-05-26 16:00"
-          placeholderTextColor="#555"
-        />
+        {renderDateField('Start Date', startDate, setStartDate, 'start')}
+        {renderDateField('End Date', endDate, setEndDate, 'end')}
         
         <TouchableOpacity style={styles.imageBox} onPress={pickImage}>
           <Text style={styles.uploadText}>{image ? 'Image Selected' : 'Tap to Upload Image'}</Text>
@@ -262,6 +312,21 @@ const styles = StyleSheet.create({
   input: { backgroundColor: '#0c1a2b', padding: 15, color: '#fff', borderRadius: 12, marginBottom: 15 },
   label: { color: '#00d2ff', marginBottom: 5 },
   pickerContainer: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 15 },
+  dateButton: { backgroundColor: '#0c1a2b', padding: 15, borderRadius: 12, marginBottom: 15 },
+  dateButtonText: { color: '#fff' },
+  datePlaceholder: { color: '#555' },
+  webDateInputWrapper: { backgroundColor: '#0c1a2b', borderRadius: 12, marginBottom: 15, overflow: 'hidden' },
+  webDateInput: {
+    width: '100%',
+    boxSizing: 'border-box',
+    backgroundColor: '#0c1a2b',
+    color: '#fff',
+    borderWidth: 0,
+    borderStyle: 'solid',
+    outlineStyle: 'none',
+    padding: 15,
+    fontSize: 14,
+  } as any,
   imageBox: { height: 100, backgroundColor: '#0c1a2b', justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderRadius: 12 },
   uploadText: { color: '#fff' },
   errorText: { color: '#ff6b6b', textAlign: 'center', marginBottom: 15, fontWeight: 'bold' },
