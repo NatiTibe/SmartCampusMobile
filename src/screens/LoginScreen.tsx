@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { 
-  StyleSheet, View, Text, TextInput, TouchableOpacity, 
-  Image, KeyboardAvoidingView, Platform, Dimensions, Alert, ScrollView 
+import {
+  StyleSheet, View, Text, TextInput, TouchableOpacity,
+  Image, KeyboardAvoidingView, Platform, Dimensions, Alert, ScrollView
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { login } from '../services/authService';
@@ -19,22 +19,16 @@ const LoginScreen = ({ route, navigation }: any) => {
       Alert.alert('Login required', 'Please enter both email and password.');
       return;
     }
-
     setError(null);
     try {
       const responseData = await login({ email, password });
       const user = responseData.user;
-      
-      if (!user) {
-        throw new Error('User data missing from response');
-      }
+      if (!user) throw new Error('User data missing from response');
 
       const normalizedRole = String(user.role || 'student').toLowerCase();
-      const role = normalizedRole === 'admin'
-        ? 'Admin'
-        : normalizedRole === 'organizer'
-          ? 'Organizer'
-          : 'Student';
+      const role = normalizedRole === 'admin' ? 'Admin'
+        : normalizedRole === 'organizer' ? 'Organizer' : 'Student';
+
       setUserRole?.(role);
 
       const routeMap: Record<string, string> = {
@@ -42,12 +36,9 @@ const LoginScreen = ({ route, navigation }: any) => {
         organizer: 'OrganizerDashboard',
         student: 'Home',
       };
-
-      const nextRoute = routeMap[normalizedRole] || 'Home';
-
       navigation.reset({
         index: 0,
-        routes: [{ name: nextRoute, params: { userRole: role, setUserRole } }],
+        routes: [{ name: routeMap[normalizedRole] || 'Home', params: { userRole: role, setUserRole } }],
       });
     } catch (err: any) {
       console.error('Login Navigation Error:', err);
@@ -60,21 +51,18 @@ const LoginScreen = ({ route, navigation }: any) => {
   return (
     <View style={styles.container}>
       <View style={styles.darkBackground} />
-      
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-        style={styles.content}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.kav}
       >
-        {/* ADDED SCROLLVIEW HERE TO FIX RESPONSIVENESS */}
-        <ScrollView 
-          style={styles.scrollView}
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.illustrationContainer}>
-            <Image 
-              source={require('../../assets/login-illustration.png')} 
+            <Image
+              source={require('../../assets/login-illustration.png')}
               style={styles.illustration}
               resizeMode="contain"
             />
@@ -89,11 +77,9 @@ const LoginScreen = ({ route, navigation }: any) => {
 
             <View style={styles.inputWrapper}>
               <View style={styles.inputContainer}>
-                <View style={styles.iconBox}>
-                  <Text style={styles.icon}>📧</Text>
-                </View>
-                <TextInput 
-                  placeholder="Email" 
+                <View style={styles.iconBox}><Text style={styles.icon}>📧</Text></View>
+                <TextInput
+                  placeholder="Email"
                   placeholderTextColor="rgba(255,255,255,0.4)"
                   style={styles.input}
                   value={email}
@@ -101,13 +87,10 @@ const LoginScreen = ({ route, navigation }: any) => {
                   autoCapitalize="none"
                 />
               </View>
-
               <View style={styles.inputContainer}>
-                <View style={styles.iconBox}>
-                  <Text style={styles.icon}>🔒</Text>
-                </View>
-                <TextInput 
-                  placeholder="Password" 
+                <View style={styles.iconBox}><Text style={styles.icon}>🔒</Text></View>
+                <TextInput
+                  placeholder="Password"
                   placeholderTextColor="rgba(255,255,255,0.4)"
                   style={styles.input}
                   value={password}
@@ -120,9 +103,9 @@ const LoginScreen = ({ route, navigation }: any) => {
             {error && <Text style={styles.errorText}>{error}</Text>}
 
             <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-              <LinearGradient 
-                colors={['#00d2ff', '#3a7bd5']} 
-                start={{x: 0, y: 0}} end={{x: 1, y: 0}}
+              <LinearGradient
+                colors={['#00d2ff', '#3a7bd5']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.btnGradient}
               >
                 <Text style={styles.loginBtnText}>Log in</Text>
@@ -148,86 +131,30 @@ const LoginScreen = ({ route, navigation }: any) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  darkBackground: { 
-    ...StyleSheet.absoluteFillObject, 
-    backgroundColor: '#000b18' 
-  },
-  content: { flex: 1 },
-  scrollView: { width: '100%' },
-  scrollContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 20 },
-  
-  illustrationContainer: {
-    width: width,
-    height: 180,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: -45, 
-    zIndex: 10,
-  },
+  darkBackground: { ...StyleSheet.absoluteFillObject, backgroundColor: '#000b18' },
+  kav: { flex: 1 },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 30 },
+  illustrationContainer: { width: width, height: 180, justifyContent: 'center', alignItems: 'center', marginBottom: -45, zIndex: 10 },
   illustration: { width: '85%', height: '100%' },
-
-  card: {
-    width: width * 0.9,
-    backgroundColor: '#0c1a2b', 
-    borderRadius: 45,
-    paddingTop: 65,
-    paddingBottom: 40,
-    paddingHorizontal: 25,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
-  },
-
+  card: { width: width * 0.9, backgroundColor: '#0c1a2b', borderRadius: 45, paddingTop: 65, paddingBottom: 40, paddingHorizontal: 25, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', alignItems: 'center' },
   headerArea: { alignItems: 'center', marginBottom: 30 },
-  glowText: { 
-    color: '#00d2ff', 
-    fontSize: 60, 
-    fontWeight: 'bold', 
-    textShadowColor: '#00d2ff',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 15,
-  },
-  titleText: { 
-    color: '#fff', 
-    fontSize: 24, 
-    fontWeight: 'bold', 
-    marginTop: -5,
-    letterSpacing: 1
-  },
-  subTitleText: { 
-    color: 'rgba(255,255,255,0.5)', 
-    fontSize: 11, 
-    fontWeight: '600',
-    marginTop: 5,
-    textTransform: 'uppercase'
-  },
-
+  glowText: { color: '#00d2ff', fontSize: 60, fontWeight: 'bold', textShadowColor: '#00d2ff', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 15 },
+  titleText: { color: '#fff', fontSize: 24, fontWeight: 'bold', marginTop: -5, letterSpacing: 1 },
+  subTitleText: { color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: '600', marginTop: 5, textTransform: 'uppercase' },
   inputWrapper: { width: '100%', marginBottom: 25 },
-  inputContainer: { 
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#152639', 
-    borderRadius: 20, 
-    paddingHorizontal: 15,
-    height: 60,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)'
-  },
+  inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#152639', borderRadius: 20, paddingHorizontal: 15, height: 60, marginBottom: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
   iconBox: { width: 30, alignItems: 'center' },
   icon: { fontSize: 18 },
   input: { flex: 1, color: '#fff', fontSize: 16, paddingLeft: 10 },
-
   loginBtn: { width: '100%', height: 65, borderRadius: 25, overflow: 'hidden' },
   btnGradient: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loginBtnText: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
-
   footer: { flexDirection: 'row', marginTop: 25 },
   footerText: { color: 'rgba(255,255,255,0.6)', fontSize: 14 },
   signupText: { color: '#00d2ff', fontWeight: 'bold', fontSize: 14 },
   forgotButton: { marginTop: 16 },
   forgotText: { color: '#8fbfff', fontSize: 14, textDecorationLine: 'underline' },
-  errorText: { color: '#ff6b6b', marginTop: 8, textAlign: 'center', marginBottom: 10 }
+  errorText: { color: '#ff6b6b', marginTop: 8, textAlign: 'center', marginBottom: 10 },
 });
 
 export default LoginScreen;

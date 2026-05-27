@@ -19,7 +19,6 @@ const AIPicksScreen = ({ navigation }: any) => {
           console.log('Failed to fetch AI picks', error);
         }
       };
-
       fetchRecommendations();
     }, [])
   );
@@ -31,8 +30,9 @@ const AIPicksScreen = ({ navigation }: any) => {
       } else {
         await registerForEvent(event.id);
       }
-
-      setEvents(prev => prev.map(item => item.id === event.id ? { ...item, isRegistered: !item.isRegistered } : item));
+      setEvents(prev => prev.map(item =>
+        item.id === event.id ? { ...item, isRegistered: !item.isRegistered } : item
+      ));
     } catch (error) {
       console.log('Registration update failed', error);
     }
@@ -40,68 +40,65 @@ const AIPicksScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={styles.backArrow}>←</Text>
-          </TouchableOpacity>
-          <View>
-            <Text style={styles.headerTitle}>AI Picks</Text>
-            <Text style={styles.headerSub}>Personalized for your profile</Text>
-          </View>
+      <View style={styles.headerRow}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Text style={styles.backArrow}>←</Text>
+        </TouchableOpacity>
+        <View>
+          <Text style={styles.headerTitle}>AI Picks</Text>
+          <Text style={styles.headerSub}>Personalized for your profile</Text>
         </View>
-
-        <FlatList
-          data={events}
-          keyExtractor={(item) => item.id}
-          ListEmptyComponent={<Text style={styles.emptyText}>No recommendations yet.</Text>}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <View style={styles.aiCard}>
-              <View style={styles.matchBadge}>
-                <LinearGradient colors={['#8E2DE2', '#4A00E0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.matchGradient}>
-                  <Text style={styles.matchText}>{item.match} Match</Text>
-                </LinearGradient>
-              </View>
-
-              <TouchableOpacity onPress={() => navigation.navigate('EventDetails', { eventId: item.id, event: item })}>
-                <Text style={styles.eventTitle}>{item.title}</Text>
-              </TouchableOpacity>
-
-              <View style={styles.reasonBox}>
-                <Text style={styles.reasonLabel}>AI INSIGHT:</Text>
-                <Text style={styles.reasonText}>{item.reason}</Text>
-              </View>
-
-              <View style={styles.metaInfo}>
-                <Text style={styles.metaText}>{item.location}</Text>
-                <Text style={styles.metaText}>{item.date} {item.time}</Text>
-              </View>
-
-              <TouchableOpacity style={styles.regBtn} onPress={() => toggleRegister(item)}>
-                <LinearGradient
-                  colors={item.isRegistered ? ['#28a745', '#1e7e34'] : ['#00d2ff', '#3a7bd5']}
-                  style={styles.btnGradient}
-                >
-                  <Text style={styles.btnText}>{item.isRegistered ? 'Joined' : 'Register Now'}</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          )}
-        />
       </View>
+
+      <FlatList
+        data={events}
+        keyExtractor={(item) => item.id}
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={<Text style={styles.emptyText}>No recommendations yet.</Text>}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <View style={styles.aiCard}>
+            <View style={styles.matchBadge}>
+              <LinearGradient colors={['#8E2DE2', '#4A00E0']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.matchGradient}>
+                <Text style={styles.matchText}>{item.match} Match</Text>
+              </LinearGradient>
+            </View>
+            <TouchableOpacity onPress={() => navigation.navigate('EventDetails', { eventId: item.id, event: item })}>
+              <Text style={styles.eventTitle}>{item.title}</Text>
+            </TouchableOpacity>
+            <View style={styles.reasonBox}>
+              <Text style={styles.reasonLabel}>AI INSIGHT:</Text>
+              <Text style={styles.reasonText}>{item.reason}</Text>
+            </View>
+            <View style={styles.metaInfo}>
+              <Text style={styles.metaText}>{item.location}</Text>
+              <Text style={styles.metaText}>{item.date} {item.time}</Text>
+            </View>
+            <TouchableOpacity style={styles.regBtn} onPress={() => toggleRegister(item)}>
+              <LinearGradient
+                colors={item.isRegistered ? ['#28a745', '#1e7e34'] : ['#00d2ff', '#3a7bd5']}
+                style={styles.btnGradient}
+              >
+                <Text style={styles.btnText}>{item.isRegistered ? 'Joined' : 'Register Now'}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        )}
+      />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#000b18' },
-  container: { flex: 1, paddingHorizontal: 20 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 30 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 20, paddingHorizontal: 20 },
   backButton: { marginRight: 15, padding: 5 },
   backArrow: { color: '#00d2ff', fontSize: 32, fontWeight: 'bold' },
   headerTitle: { color: '#fff', fontSize: 26, fontWeight: 'bold' },
   headerSub: { color: '#8E2DE2', fontSize: 13, fontWeight: 'bold', textTransform: 'uppercase' },
+  list: { flex: 1 },
+  listContent: { paddingHorizontal: 20, paddingBottom: 40 },
   aiCard: { backgroundColor: '#0c1a2b', borderRadius: 25, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(142, 45, 226, 0.3)' },
   matchBadge: { alignSelf: 'flex-start', borderRadius: 8, overflow: 'hidden', marginBottom: 12 },
   matchGradient: { paddingHorizontal: 10, paddingVertical: 4 },
