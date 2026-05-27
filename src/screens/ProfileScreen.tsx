@@ -126,9 +126,7 @@ const ProfileScreen = ({ route, navigation }: any) => {
           </View>
         </View>
 
-        {/* ============================================================
-            STUDENT ONLY: Account Details card matching the screenshot
-        ============================================================ */}
+    
         {isStudent && (
           <View style={styles.card}>
             {/* Card header */}
