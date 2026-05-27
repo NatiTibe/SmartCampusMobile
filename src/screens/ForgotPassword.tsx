@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { 
-  StyleSheet, View, Text, TextInput, TouchableOpacity, 
-  KeyboardAvoidingView, Platform, Dimensions, ActivityIndicator 
+import {
+  StyleSheet, View, Text, TextInput, TouchableOpacity,
+  KeyboardAvoidingView, Platform, Dimensions, ActivityIndicator, ScrollView
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { forgotPassword } from '../services/authService';
@@ -16,17 +16,9 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
 
   const handleSendEmail = async () => {
     setError(null);
-
-    if (!email) {
-      setError('Please enter your email address.');
-      return;
-    }
-
+    if (!email) { setError('Please enter your email address.'); return; }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
-      setError('Please enter a valid email address format.');
-      return;
-    }
+    if (!emailRegex.test(email.trim())) { setError('Please enter a valid email address format.'); return; }
 
     setLoading(true);
     try {
@@ -42,90 +34,76 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
   return (
     <View style={styles.container}>
       <View style={styles.darkBackground} />
-      
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-        style={styles.content}
+      {/* FIX: KAV wraps ScrollView so keyboard pushes content up correctly */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.kav}
       >
-        <View style={styles.card}>
-          
-          {!isSent ? (
-            /* STEP 1: ENTER EMAIL FLOW */
-            <View style={styles.innerForm}>
-              <Text style={styles.glowTitle}>Reset Password</Text>
-              
-              <Text style={styles.subtitleText}>
-                Enter your email to receive a password reset link.
-              </Text>
+        {/* FIX: ScrollView with flexGrow:1 so card can scroll on small screens */}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.card}>
+            {!isSent ? (
+              <View style={styles.innerForm}>
+                <Text style={styles.glowTitle}>Reset Password</Text>
+                <Text style={styles.subtitleText}>
+                  Enter your email to receive a password reset link.
+                </Text>
 
-              <View style={styles.inputContainer}>
-                <View style={styles.iconBox}>
-                  <Text style={styles.icon}>📧</Text>
+                <View style={styles.inputContainer}>
+                  <View style={styles.iconBox}>
+                    <Text style={styles.icon}>📧</Text>
+                  </View>
+                  <TextInput
+                    placeholder="Enter your email"
+                    placeholderTextColor="rgba(255,255,255,0.4)"
+                    style={styles.input}
+                    value={email}
+                    onChangeText={(text) => { setEmail(text); setError(null); }}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    editable={!loading}
+                  />
                 </View>
-                <TextInput 
-                  placeholder="Enter your email" 
-                  placeholderTextColor="rgba(255,255,255,0.4)"
-                  style={styles.input}
-                  value={email}
-                  onChangeText={(text) => { setEmail(text); setError(null); }}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  editable={!loading}
-                />
-              </View>
 
-              {error ? (
-                <View style={styles.errorContainer}>
-                  <Text style={styles.errorText}>{error}</Text>
+                {error ? (
+                  <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>{error}</Text>
+                  </View>
+                ) : null}
+
+                <TouchableOpacity style={styles.actionBtn} onPress={handleSendEmail} disabled={loading}>
+                  <LinearGradient colors={['#00d2ff', '#3a7bd5']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.btnGradient}>
+                    {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.actionBtnText}>Send Reset Email</Text>}
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()} disabled={loading}>
+                  <Text style={styles.cancelText}>Back to Login</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.innerForm}>
+                <View style={styles.successIconBox}>
+                  <Text style={styles.successIcon}>📧</Text>
                 </View>
-              ) : null}
-
-              <TouchableOpacity style={styles.actionBtn} onPress={handleSendEmail} disabled={loading}>
-                <LinearGradient 
-                  colors={['#00d2ff', '#3a7bd5']} 
-                  start={{x: 0, y: 0}} end={{x: 1, y: 0}}
-                  style={styles.btnGradient}
-                >
-                  {loading ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.actionBtnText}>Send Reset Email</Text>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()} disabled={loading}>
-                <Text style={styles.cancelText}>Back to Login</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            /* STEP 2: UPDATED SECURE / AMBIENT SUCCESS STATE */
-            <View style={styles.innerForm}>
-              <View style={styles.successIconBox}>
-                <Text style={styles.successIcon}>📧</Text>
+                <Text style={styles.glowTitle}>Request Received</Text>
+                <Text style={styles.subtitleText}>
+                  If an account is registered with this email, a password reset link has been sent to{' '}
+                  <Text style={styles.emailHighlight}>{email}</Text>. Please check your inbox and follow the instructions.
+                </Text>
+                <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Login')}>
+                  <LinearGradient colors={['#00d2ff', '#3a7bd5']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.btnGradient}>
+                    <Text style={styles.actionBtnText}>Back to Login</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
               </View>
-              
-              {/* Changed to "Request Received" */}
-              <Text style={styles.glowTitle}>Request Received</Text>
-              
-              {/* Changed description to be secure and ambiguous */}
-              <Text style={styles.subtitleText}>
-                If an account is registered with this email, a password reset link has been sent to <Text style={styles.emailHighlight}>{email}</Text>. Please check your inbox and follow the instructions to update your password on the web.
-              </Text>
-
-              <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Login')}>
-                <LinearGradient 
-                  colors={['#00d2ff', '#3a7bd5']} 
-                  start={{x: 0, y: 0}} end={{x: 1, y: 0}}
-                  style={styles.btnGradient}
-                >
-                  <Text style={styles.actionBtnText}>Back to Login</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          )}
-
-        </View>
+            )}
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </View>
   );
@@ -134,7 +112,9 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   darkBackground: { ...StyleSheet.absoluteFillObject, backgroundColor: '#000b18' },
-  content: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  kav: { flex: 1 },
+  // FIX: flexGrow:1 + justifyContent:center centers card; paddingVertical gives room on small screens
+  scrollContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 },
   card: { width: width * 0.9, backgroundColor: '#0c1a2b', borderRadius: 45, paddingVertical: 45, paddingHorizontal: 25, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', alignItems: 'center' },
   glowTitle: { color: '#fff', fontSize: 26, fontWeight: 'bold', marginBottom: 15, textAlign: 'center', letterSpacing: 0.5 },
   innerForm: { width: '100%', alignItems: 'center' },
@@ -149,10 +129,10 @@ const styles = StyleSheet.create({
   actionBtnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   cancelButton: { marginTop: 25, padding: 5 },
   cancelText: { color: 'rgba(255,255,255,0.5)', fontSize: 15, textDecorationLine: 'underline' },
-  errorContainer: { width: '100%', backgroundColor: 'rgba(255, 107, 107, 0.1)', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255, 107, 107, 0.3)', marginBottom: 15 },
+  errorContainer: { width: '100%', backgroundColor: 'rgba(255,107,107,0.1)', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,107,107,0.3)', marginBottom: 15 },
   errorText: { color: '#ff6b6b', fontSize: 14, textAlign: 'center', fontWeight: '500' },
-  successIconBox: { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(0, 210, 255, 0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  successIcon: { fontSize: 24 }
+  successIconBox: { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(0,210,255,0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  successIcon: { fontSize: 24 },
 });
 
 export default ForgotPasswordScreen;
