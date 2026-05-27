@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   StyleSheet, View, Text, TextInput, TouchableOpacity, 
-  Image, KeyboardAvoidingView, Platform, Dimensions, Alert 
+  Image, KeyboardAvoidingView, Platform, Dimensions, Alert, ScrollView 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { login } from '../services/authService';
@@ -22,17 +22,13 @@ const LoginScreen = ({ route, navigation }: any) => {
 
     setError(null);
     try {
-      // 1. Await the login response
       const responseData = await login({ email, password });
-      
-      // 2. Destructure safely from responseData
       const user = responseData.user;
       
       if (!user) {
         throw new Error('User data missing from response');
       }
 
-      // 3. Robust role determination
       const normalizedRole = String(user.role || 'student').toLowerCase();
       const role = normalizedRole === 'admin'
         ? 'Admin'
@@ -41,7 +37,6 @@ const LoginScreen = ({ route, navigation }: any) => {
           : 'Student';
       setUserRole?.(role);
 
-      // 4. Define route mapping
       const routeMap: Record<string, string> = {
         admin: 'AdminDashboard',
         organizer: 'OrganizerDashboard',
@@ -50,7 +45,6 @@ const LoginScreen = ({ route, navigation }: any) => {
 
       const nextRoute = routeMap[normalizedRole] || 'Home';
 
-      // 5. Navigate
       navigation.reset({
         index: 0,
         routes: [{ name: nextRoute, params: { userRole: role, setUserRole } }],
@@ -71,75 +65,82 @@ const LoginScreen = ({ route, navigation }: any) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
         style={styles.content}
       >
-        <View style={styles.illustrationContainer}>
-          <Image 
-            source={require('../../assets/login-illustration.png')} 
-            style={styles.illustration}
-            resizeMode="contain"
-          />
-        </View>
-
-        <View style={styles.card}>
-          <View style={styles.headerArea}>
-            <Text style={styles.glowText}>AAU</Text>
-            <Text style={styles.titleText}>SMART CAMPUS</Text>
-            <Text style={styles.subTitleText}>EVENT MANAGEMENT</Text>
+        {/* ADDED SCROLLVIEW HERE TO FIX RESPONSIVENESS */}
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.illustrationContainer}>
+            <Image 
+              source={require('../../assets/login-illustration.png')} 
+              style={styles.illustration}
+              resizeMode="contain"
+            />
           </View>
 
-          <View style={styles.inputWrapper}>
-            <View style={styles.inputContainer}>
-              <View style={styles.iconBox}>
-                <Text style={styles.icon}>📧</Text>
-              </View>
-              <TextInput 
-                placeholder="Email" 
-                placeholderTextColor="rgba(255,255,255,0.4)"
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-              />
+          <View style={styles.card}>
+            <View style={styles.headerArea}>
+              <Text style={styles.glowText}>AAU</Text>
+              <Text style={styles.titleText}>SMART CAMPUS</Text>
+              <Text style={styles.subTitleText}>EVENT MANAGEMENT</Text>
             </View>
 
-            <View style={styles.inputContainer}>
-              <View style={styles.iconBox}>
-                <Text style={styles.icon}>🔒</Text>
+            <View style={styles.inputWrapper}>
+              <View style={styles.inputContainer}>
+                <View style={styles.iconBox}>
+                  <Text style={styles.icon}>📧</Text>
+                </View>
+                <TextInput 
+                  placeholder="Email" 
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                />
               </View>
-              <TextInput 
-                placeholder="Password" 
-                placeholderTextColor="rgba(255,255,255,0.4)"
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
+
+              <View style={styles.inputContainer}>
+                <View style={styles.iconBox}>
+                  <Text style={styles.icon}>🔒</Text>
+                </View>
+                <TextInput 
+                  placeholder="Password" 
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  style={styles.input}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                />
+              </View>
             </View>
-          </View>
 
-          {error && <Text style={styles.errorText}>{error}</Text>}
+            {error && <Text style={styles.errorText}>{error}</Text>}
 
-          <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-            <LinearGradient 
-              colors={['#00d2ff', '#3a7bd5']} 
-              start={{x: 0, y: 0}} end={{x: 1, y: 0}}
-              style={styles.btnGradient}
-            >
-              <Text style={styles.loginBtnText}>Log in</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          {/* UPDATED: This button now navigates to the new ForgotPassword screen */}
-          <TouchableOpacity style={styles.forgotButton} onPress={() => navigation.navigate('ForgotPassword')}>
-            <Text style={styles.forgotText}>Forgot password?</Text>
-          </TouchableOpacity>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-              <Text style={styles.signupText}>Create one.</Text>
+            <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
+              <LinearGradient 
+                colors={['#00d2ff', '#3a7bd5']} 
+                start={{x: 0, y: 0}} end={{x: 1, y: 0}}
+                style={styles.btnGradient}
+              >
+                <Text style={styles.loginBtnText}>Log in</Text>
+              </LinearGradient>
             </TouchableOpacity>
+
+            <TouchableOpacity style={styles.forgotButton} onPress={() => navigation.navigate('ForgotPassword')}>
+              <Text style={styles.forgotText}>Forgot password?</Text>
+            </TouchableOpacity>
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Don't have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
+                <Text style={styles.signupText}>Create one.</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </View>
   );
@@ -151,7 +152,9 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject, 
     backgroundColor: '#000b18' 
   },
-  content: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  content: { flex: 1 },
+  scrollView: { width: '100%' },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 20 },
   
   illustrationContainer: {
     width: width,
